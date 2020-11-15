@@ -1,0 +1,138 @@
+---
+title: "Data Wrangling"
+author: "Rowana Ahmed"
+date: "11/15/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(stringr)
+library(xlsx)
+```
+
+## Read in Data
+
+```{r,  warning = FALSE}
+facilities = read_csv('data/mammography_facilities.csv')
+screen_rate = read_csv('data/500_Cities__City.csv')
+chdb_metrics = read_csv('data/CHDB_data_city_allv10_1.csv')
+```
+
+
+## High Level: National Facilities Mapping
+
+objective: merge following data sources -  
+
+* mammography facilities
+
+* screen rates (mammography, papsmear, core preventive services)
+
+* breast cancer deaths
+
+Step 1: subset 500 cities data to relevant screening metrics -> **screen_data** df
+```{r}
+names(screen_rate)
+
+# # Relevant measures (each have corresponding age adjusted measures): 
+# # "Papanicolaou smear use among adult women aged 21–65 Years" - PAPTEST
+# # "Mammography use among women aged 50–74 Years" - MAMMOUSE 
+# # "Older adult women aged >=65 Years who are up to date on a core set of clinical preventive services: Flu shot past Year, PPV shot ever, Colorectal cancer screening, and Mammogram past 2 Years" - COREW
+# 
+screen_metrics <- c('StateAbbr', 'PlaceName', 'Population2010',
+                   'COREW_CrudePrev', 'COREW_Crude95CI', 
+                   'COREW_AdjPrev', 'COREW_Adj95CI',
+                   'MAMMOUSE_CrudePrev', 'MAMMOUSE_Crude95CI', 
+                   'MAMMOUSE_AdjPrev', 'MAMMOUSE_Adj95CI',
+                   'PAPTEST_CrudePrev', 'PAPTEST_Crude95CI', 
+                   'PAPTEST_AdjPrev', 'PAPTEST_Adj95CI')
+
+screen_data <-  screen_rate %>%
+                select(screen_metrics) %>% rename(state_abbr = StateAbbr,
+                                                  city_name = PlaceName)
+
+```
+
+Step 2: subset city health dashboard metrics to target variables -> **factors_data** df
+```{r}
+names(chdb_metrics)
+unique(chdb_metrics$metric_name)
+
+# Relevant measures
+
+# ## environmental
+# "Air pollution - particulate matter" - 2
+# "Housing with potential lead risk" - 12
+# 
+# ## socioeconomic
+# "High school completion" - 10
+# "Income Inequality" - 13
+# "Limited access to healthy foods" -15
+# "Teen births"  - 33 
+# "Walkability" - 27
+# "Uninsured"  - 25
+# "Unemployment - annual, neighborhood-level" - 24
+# "Racial/ethnic diversity"  - 21
+# 
+# ## individual health
+# "Binge drinking"  - 3
+# "Diabetes" - 6
+# "Frequent mental distress" -7
+# "Frequent physical distress" -8
+# "Prenatal care" - 34
+# "Low birthweight" - 35
+# "Breast cancer deaths" - 28
+# "Smoking" - 22
+# "Obesity" - 17
+
+indiv_health <- list(3, 6, 7, 8, 34, 35, 28, 22, 17)
+socioecon <- list(10, 13, 15, 33, 27, 25, 24, 21)
+env <- list(2,12)
+
+factors_data <- chdb_metrics %>% filter(metric_number %in% append(append(indiv_health, 
+                                                                  socioecon), env)) %>%
+                 select(c(state_abbr, city_name, metric_name, metric_number, data_yr_type,
+                          group_name, group_number, 
+                          num, denom, est, lci, uci))
+
+factors_data <- factors_data %>% mutate(metric_name = paste(metric_name, group_name, sep='_'))
+
+
+
+```
+
+
+Step 3: aggregate facilities count per city -> **site_counts** df
+```{r}
+facilities <- facilities %>% mutate(state = str_to_upper(state)) %>% 
+                             mutate(city = str_to_title(city))
+site_counts <- facilities %>% group_by(state, city) %>% count(city)
+names(site_counts) <- c('state_abbr', 'city_name', 'number_sites')
+
+head(site_counts)
+
+
+```
+
+Step 4: Merge higher level data into single df
+
+
+```{r}
+
+wide_factors <- factors_data %>% pivot_wider(id_cols = c(state_abbr, city_name),
+                                             names_from = metric_name,
+                                             values_from = est)
+
+temp <- left_join(screen_data, wide_factors, by=c('state_abbr', 'city_name'))
+city_total_data <- left_join(temp, site_counts, by=c('state_abbr', 'city_name'))
+
+write.xlsx(city_total_data, 'data/city_total_data.xlsx')
+
+```
+
+
+## Lower Level Geography Focused Data
