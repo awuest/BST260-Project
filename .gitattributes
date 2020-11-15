@@ -1,0 +1,7 @@
+data/*.csv filter=lfs diff=lfs merge=lfs -text
+data/mammography_facilities.csv filter=lfs diff=lfs merge=lfs -text
+data/500_Cities__Local_Data_for_Better_Health__2019_release.csv filter=lfs diff=lfs merge=lfs -text
+data/CHDB_data_city_allv10_1.csv filter=lfs diff=lfs merge=lfs -text
+data/city_health_data_bkp/CHDB_data_city_allv10_1.csv filter=lfs diff=lfs merge=lfs -text
+data/city_health_data_bkp/CHDB_data_tract_allv10_1.csv filter=lfs diff=lfs merge=lfs -text
+data/city_health_data_bkp/data_cookbook.pdf filter=lfs diff=lfs merge=lfs -text
