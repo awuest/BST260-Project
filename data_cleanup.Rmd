@@ -37,7 +37,7 @@ objective: merge following data sources -
 Step 1: subset 500 cities data to relevant screening metrics -> **screen_data** df
 ```{r}
 names(screen_rate)
-#test
+
 # # Relevant measures (each have corresponding age adjusted measures): 
 # # "Papanicolaou smear use among adult women aged 21–65 Years" - PAPTEST
 # # "Mammography use among women aged 50–74 Years" - MAMMOUSE 
