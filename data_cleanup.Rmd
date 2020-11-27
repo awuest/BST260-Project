@@ -236,7 +236,7 @@ names(tract_tot) <- names(tract_tot) %>% str_to_lower() %>%  str_replace_all(' '
 
 
 ```{r}
-write.xlsx(tract_tot, 'data/census_tract_total_data.xlsx')
+write_csv(tract_tot, 'data/census_tract_total_data.csv')
 
 ```
 

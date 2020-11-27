@@ -590,8 +590,10 @@ indiv_health &lt;- list(3, 6, 7, 8, 34, 35, 28, 22, 17)
 socioecon &lt;- list(10, 13, 15, 33, 27, 25, 24, 21)
 env &lt;- list(2,12)
 
-factors_data &lt;- chdb_metrics %&gt;% filter(metric_number %in% append(append(indiv_health, 
-                                                                  socioecon), env)) %&gt;%
+all_measures = append(append(indiv_health, socioecon), env)
+
+factors_data &lt;- chdb_metrics %&gt;% filter((metric_number %in% all_measures) &amp; 
+                                         data_yr_type != &quot;2016-2018&quot;)  %&gt;% # some cities have teen births &amp; low birth weight reported for both 2015-2017 &amp; 2016-2018
                  select(c(state_abbr, city_name, metric_name, metric_number, data_yr_type,
                           group_name, group_number, 
                           num, denom, est, lci, uci))
@@ -618,17 +620,215 @@ head(site_counts)</code></pre>
 <pre class="r"><code>wide_factors &lt;- factors_data %&gt;% pivot_wider(id_cols = c(state_abbr, city_name),
                                              names_from = metric_name,
                                              values_from = est)</code></pre>
-<pre><code>## Warning: Values are not uniquely identified; output will contain list-cols.
-## * Use `values_fn = list` to suppress this warning.
-## * Use `values_fn = length` to identify where the duplicates arise
-## * Use `values_fn = {summary_fun}` to summarise duplicates</code></pre>
 <pre class="r"><code>temp &lt;- left_join(screen_data, wide_factors, by=c(&#39;state_abbr&#39;, &#39;city_name&#39;))
 city_total_data &lt;- left_join(temp, site_counts, by=c(&#39;state_abbr&#39;, &#39;city_name&#39;))
 
+# column cleanup
+names(city_total_data) &lt;- names(city_total_data) %&gt;% str_to_lower() %&gt;%  str_replace_all(&#39; &#39;, &#39;_&#39;)%&gt;% 
+                           str_replace_all(c(&quot;_-_|,_&quot;), &#39;_&#39;)
+
+
 write.xlsx(city_total_data, &#39;data/city_total_data.xlsx&#39;)</code></pre>
+<pre class="r"><code>head(city_total_data)</code></pre>
+<pre><code>## # A tibble: 6 x 82
+##   state_abbr city_name population2010 corew_crudeprev corew_crude95ci
+##   &lt;chr&gt;      &lt;chr&gt;              &lt;dbl&gt;           &lt;dbl&gt; &lt;chr&gt;          
+## 1 AL         Birmingh…         212237            26   (25.4, 26.6)   
+## 2 AL         Hoover             81619            38.6 (37.1, 40.0)   
+## 3 AL         Huntsvil…         180105            39.5 (38.6, 40.4)   
+## 4 AL         Mobile            195111            30.7 (30.0, 31.4)   
+## 5 AL         Montgome…         205764            31   (30.3, 31.8)   
+## 6 AL         Tuscaloo…          90468            31.7 (30.6, 32.8)   
+## # … with 77 more variables: corew_adjprev &lt;dbl&gt;, corew_adj95ci &lt;chr&gt;,
+## #   mammouse_crudeprev &lt;dbl&gt;, mammouse_crude95ci &lt;chr&gt;, mammouse_adjprev &lt;dbl&gt;,
+## #   mammouse_adj95ci &lt;chr&gt;, paptest_crudeprev &lt;dbl&gt;, paptest_crude95ci &lt;chr&gt;,
+## #   paptest_adjprev &lt;dbl&gt;, paptest_adj95ci &lt;chr&gt;,
+## #   air_pollution_particulate_matter_total_population &lt;dbl&gt;,
+## #   binge_drinking_total_population &lt;dbl&gt;, diabetes_total_population &lt;dbl&gt;,
+## #   frequent_mental_distress_total_population &lt;dbl&gt;,
+## #   frequent_physical_distress_total_population &lt;dbl&gt;,
+## #   high_school_completion_total_population &lt;dbl&gt;,
+## #   high_school_completion_female &lt;dbl&gt;, high_school_completion_male &lt;dbl&gt;,
+## #   high_school_completion_asian &lt;dbl&gt;, high_school_completion_black &lt;dbl&gt;,
+## #   high_school_completion_hispanic &lt;dbl&gt;, high_school_completion_white &lt;dbl&gt;,
+## #   high_school_completion_other &lt;dbl&gt;,
+## #   housing_with_potential_lead_risk_total_population &lt;dbl&gt;,
+## #   income_inequality_total_population &lt;dbl&gt;,
+## #   limited_access_to_healthy_foods_total_population &lt;dbl&gt;,
+## #   limited_access_to_healthy_foods_asian &lt;dbl&gt;,
+## #   limited_access_to_healthy_foods_black &lt;dbl&gt;,
+## #   limited_access_to_healthy_foods_hispanic &lt;dbl&gt;,
+## #   limited_access_to_healthy_foods_white &lt;dbl&gt;,
+## #   limited_access_to_healthy_foods_other &lt;dbl&gt;,
+## #   obesity_total_population &lt;dbl&gt;,
+## #   `racial/ethnic_diversity_total_population` &lt;dbl&gt;,
+## #   smoking_total_population &lt;dbl&gt;,
+## #   `unemployment_annual_neighborhood-level_total_population` &lt;dbl&gt;,
+## #   `unemployment_annual_neighborhood-level_female` &lt;dbl&gt;,
+## #   `unemployment_annual_neighborhood-level_male` &lt;dbl&gt;,
+## #   `unemployment_annual_neighborhood-level_asian` &lt;dbl&gt;,
+## #   `unemployment_annual_neighborhood-level_black` &lt;dbl&gt;,
+## #   `unemployment_annual_neighborhood-level_hispanic` &lt;dbl&gt;,
+## #   `unemployment_annual_neighborhood-level_white` &lt;dbl&gt;,
+## #   `unemployment_annual_neighborhood-level_other` &lt;dbl&gt;,
+## #   uninsured_total_population &lt;dbl&gt;, `uninsured_age_0-18` &lt;dbl&gt;,
+## #   `uninsured_age_19-25` &lt;dbl&gt;, `uninsured_age_26-34` &lt;dbl&gt;,
+## #   `uninsured_age_35-44` &lt;dbl&gt;, `uninsured_age_45-64` &lt;dbl&gt;,
+## #   uninsured_female &lt;dbl&gt;, uninsured_male &lt;dbl&gt;, uninsured_asian &lt;dbl&gt;,
+## #   uninsured_black &lt;dbl&gt;, uninsured_hispanic &lt;dbl&gt;, uninsured_white &lt;dbl&gt;,
+## #   uninsured_other &lt;dbl&gt;, walkability_total_population &lt;dbl&gt;,
+## #   breast_cancer_deaths_total_population &lt;dbl&gt;,
+## #   breast_cancer_deaths_asian &lt;dbl&gt;, breast_cancer_deaths_black &lt;dbl&gt;,
+## #   breast_cancer_deaths_hispanic &lt;dbl&gt;, breast_cancer_deaths_white &lt;dbl&gt;,
+## #   teen_births_total_population &lt;dbl&gt;, teen_births_asian &lt;dbl&gt;,
+## #   teen_births_black &lt;dbl&gt;, teen_births_hispanic &lt;dbl&gt;,
+## #   teen_births_white &lt;dbl&gt;, prenatal_care_total_population &lt;dbl&gt;,
+## #   prenatal_care_asian &lt;dbl&gt;, prenatal_care_black &lt;dbl&gt;,
+## #   prenatal_care_hispanic &lt;dbl&gt;, prenatal_care_white &lt;dbl&gt;,
+## #   low_birthweight_total_population &lt;dbl&gt;, low_birthweight_asian &lt;dbl&gt;,
+## #   low_birthweight_black &lt;dbl&gt;, low_birthweight_hispanic &lt;dbl&gt;,
+## #   low_birthweight_white &lt;dbl&gt;, number_sites &lt;int&gt;</code></pre>
 </div>
 <div id="lower-level-geography-focused-data" class="section level2">
 <h2>Lower Level Geography Focused Data</h2>
+<p>Census Tract level data</p>
+<pre class="r"><code>screen_rate_tract = read_csv(&#39;data/500_Cities__censustract.csv&#39;)</code></pre>
+<pre><code>## Parsed with column specification:
+## cols(
+##   .default = col_character(),
+##   Year = col_double(),
+##   Data_Value = col_double(),
+##   Low_Confidence_Limit = col_double(),
+##   High_Confidence_Limit = col_double(),
+##   PopulationCount = col_double()
+## )</code></pre>
+<pre><code>## See spec(...) for full column specifications.</code></pre>
+<pre class="r"><code>chdb_metrics_tract = read_csv(&#39;data/CHDB_data_tract_allv10_1.csv&#39;)</code></pre>
+<pre><code>## Parsed with column specification:
+## cols(
+##   .default = col_character(),
+##   metric_number = col_double(),
+##   group_number = col_double(),
+##   num = col_double(),
+##   denom = col_double(),
+##   est = col_double(),
+##   lci = col_double(),
+##   uci = col_double(),
+##   data_yr_type = col_double(),
+##   date_export = col_date(format = &quot;&quot;),
+##   version = col_double()
+## )
+## See spec(...) for full column specifications.</code></pre>
+<pre><code>## Warning: 673200 parsing failures.
+##   row          col               expected                    actual                                file
+## 33661 data_yr_type no trailing characters , 1 Year Modeled Estimate &#39;data/CHDB_data_tract_allv10_1.csv&#39;
+## 33662 data_yr_type no trailing characters , 1 Year Modeled Estimate &#39;data/CHDB_data_tract_allv10_1.csv&#39;
+## 33663 data_yr_type no trailing characters , 1 Year Modeled Estimate &#39;data/CHDB_data_tract_allv10_1.csv&#39;
+## 33664 data_yr_type no trailing characters , 1 Year Modeled Estimate &#39;data/CHDB_data_tract_allv10_1.csv&#39;
+## 33665 data_yr_type no trailing characters , 1 Year Modeled Estimate &#39;data/CHDB_data_tract_allv10_1.csv&#39;
+## ..... ............ ...................... ......................... ...................................
+## See problems(...) for more details.</code></pre>
+<ol style="list-style-type: decimal">
+<li>Subset 500 cities data at census tract level to relevant screening metrics</li>
+</ol>
+<pre class="r"><code>names(screen_rate_tract)</code></pre>
+<pre><code>##  [1] &quot;Year&quot;                       &quot;StateAbbr&quot;                 
+##  [3] &quot;StateDesc&quot;                  &quot;CityName&quot;                  
+##  [5] &quot;GeographicLevel&quot;            &quot;DataSource&quot;                
+##  [7] &quot;Category&quot;                   &quot;UniqueID&quot;                  
+##  [9] &quot;Measure&quot;                    &quot;Data_Value_Unit&quot;           
+## [11] &quot;DataValueTypeID&quot;            &quot;Data_Value_Type&quot;           
+## [13] &quot;Data_Value&quot;                 &quot;Low_Confidence_Limit&quot;      
+## [15] &quot;High_Confidence_Limit&quot;      &quot;Data_Value_Footnote_Symbol&quot;
+## [17] &quot;Data_Value_Footnote&quot;        &quot;PopulationCount&quot;           
+## [19] &quot;GeoLocation&quot;                &quot;CategoryID&quot;                
+## [21] &quot;MeasureId&quot;                  &quot;CityFIPS&quot;                  
+## [23] &quot;TractFIPS&quot;                  &quot;Short_Question_Text&quot;</code></pre>
+<pre class="r"><code>unique(screen_rate_tract$MeasureId)</code></pre>
+<pre><code>##  [1] &quot;TEETHLOST&quot;    &quot;DENTAL&quot;       &quot;CASTHMA&quot;      &quot;HIGHCHOL&quot;     &quot;SLEEP&quot;       
+##  [6] &quot;DIABETES&quot;     &quot;OBESITY&quot;      &quot;CANCER&quot;       &quot;STROKE&quot;       &quot;MHLTH&quot;       
+## [11] &quot;CSMOKING&quot;     &quot;CHOLSCREEN&quot;   &quot;PAPTEST&quot;      &quot;ACCESS2&quot;      &quot;CHD&quot;         
+## [16] &quot;CHECKUP&quot;      &quot;KIDNEY&quot;       &quot;BINGE&quot;        &quot;LPA&quot;          &quot;ARTHRITIS&quot;   
+## [21] &quot;MAMMOUSE&quot;     &quot;BPMED&quot;        &quot;COLON_SCREEN&quot; &quot;PHLTH&quot;        &quot;COREW&quot;       
+## [26] &quot;BPHIGH&quot;       &quot;COREM&quot;        &quot;COPD&quot;</code></pre>
+<pre class="r"><code>screen_metrics_t &lt;- c(&quot;MAMMOUSE&quot;, &quot;PAPTEST&quot;, &quot;COREW&quot;)
+
+screen_data_t &lt;- screen_rate_tract %&gt;% filter((MeasureId %in% screen_metrics_t) &amp;
+                                               (DataValueTypeID == &#39;CrdPrv&#39;))%&gt;% # age adjusted missing too many vals - only keep crude
+                 select(c(&quot;StateAbbr&quot;, &quot;CityName&quot;, 
+                          &quot;MeasureId&quot;, &quot;DataValueTypeID&quot;,
+                          &quot;Data_Value&quot;, &quot;Low_Confidence_Limit&quot;, &quot;High_Confidence_Limit&quot;,
+                          &quot;CityFIPS&quot;, &quot;TractFIPS&quot;)) %&gt;%
+                 mutate(measure_name = paste(MeasureId, DataValueTypeID, sep = &#39;_&#39;)) %&gt;%
+                 select(-c(MeasureId, DataValueTypeID))
+
+
+
+head(screen_data_t)</code></pre>
+<pre><code>## # A tibble: 6 x 8
+##   StateAbbr CityName Data_Value Low_Confidence_… High_Confidence… CityFIPS
+##   &lt;chr&gt;     &lt;chr&gt;         &lt;dbl&gt;            &lt;dbl&gt;            &lt;dbl&gt; &lt;chr&gt;   
+## 1 IL        Chicago        89               86.9             91   1714000 
+## 2 IL        Chicago        89.2             86.8             91.3 1714000 
+## 3 IL        Chicago        84.6             82.4             86.8 1714000 
+## 4 IL        Chicago        86.6             85.3             87.9 1714000 
+## 5 IL        Chicago        88.2             84.9             90   1714000 
+## 6 IL        Chicago        74.7             71.8             77.7 1714000 
+## # … with 2 more variables: TractFIPS &lt;chr&gt;, measure_name &lt;chr&gt;</code></pre>
+<pre class="r"><code>col_ids = c(&quot;StateAbbr&quot;, &quot;CityName&quot;, &quot;CityFIPS&quot;, &quot;TractFIPS&quot;)
+screen_data_tract &lt;- screen_data_t %&gt;% pivot_wider(id_cols = col_ids,
+                               names_from = measure_name,
+                               values_from = c(Data_Value, Low_Confidence_Limit, 
+                                               High_Confidence_Limit),
+                               names_glue = &#39;{measure_name}_{.value}&#39;)</code></pre>
+<pre><code>## Note: Using an external vector in selections is ambiguous.
+## ℹ Use `all_of(col_ids)` instead of `col_ids` to silence this message.
+## ℹ See &lt;https://tidyselect.r-lib.org/reference/faq-external-vector.html&gt;.
+## This message is displayed once per session.</code></pre>
+<pre class="r"><code>names(screen_data_tract) &lt;- c(&#39;state_abbr&#39;, &#39;city_name&#39;, &#39;city_fips&#39;, &#39;tract_fips&#39;,
+                              &#39;paptest_crudeprev&#39;, &#39;mammouse_crudeprev&#39;, &#39;corew_curdeprev&#39;,
+                              &#39;paptest_crude95_low_ci&#39;, &#39;mammouse_crude95_low_ci&#39;, 
+                              &#39;corew_crude95_low_ci&#39;,
+                              &#39;paptest_crude95_high_ci&#39;, &#39;mammouse_crude95_high_ci&#39;, 
+                              &#39;corew_crude95_high_ci&#39;)</code></pre>
+<p>Step 2. Measures data from CHDB</p>
+<pre class="r"><code>head(chdb_metrics_tract)</code></pre>
+<pre><code>## # A tibble: 6 x 22
+##   state_abbr state_fips county_fips county_name tract_code stcotr_fips stpl_fips
+##   &lt;chr&gt;      &lt;chr&gt;      &lt;chr&gt;       &lt;chr&gt;       &lt;chr&gt;      &lt;chr&gt;       &lt;chr&gt;    
+## 1 HI         15         003         Honolulu C… 000106     15003000106 0015003  
+## 2 HI         15         003         Honolulu C… 000107     15003000107 0015003  
+## 3 HI         15         003         Honolulu C… 000108     15003000108 0015003  
+## 4 HI         15         003         Honolulu C… 000110     15003000110 0015003  
+## 5 HI         15         003         Honolulu C… 000111     15003000111 0015003  
+## 6 HI         15         003         Honolulu C… 000112     15003000112 0015003  
+## # … with 15 more variables: city_name &lt;chr&gt;, metric_name &lt;chr&gt;,
+## #   metric_number &lt;dbl&gt;, group_name &lt;chr&gt;, group_number &lt;dbl&gt;, num &lt;dbl&gt;,
+## #   denom &lt;dbl&gt;, est &lt;dbl&gt;, lci &lt;dbl&gt;, uci &lt;dbl&gt;, data_yr_type &lt;dbl&gt;,
+## #   geo_level &lt;chr&gt;, date_export &lt;date&gt;, version &lt;dbl&gt;,
+## #   suggested_citation &lt;chr&gt;</code></pre>
+<pre class="r"><code># not all measures available at city level are available at tract level (e.g breast cancer mortality missing @ tract level)
+factors_data_tract &lt;- chdb_metrics_tract %&gt;% filter((metric_number %in% all_measures) )  %&gt;% 
+                 select(c(state_abbr, city_name, stcotr_fips, 
+                          metric_name, metric_number, data_yr_type,
+                          group_name, group_number, 
+                          num, denom, est, lci, uci))
+
+factors_data_tract &lt;- factors_data_tract %&gt;% mutate(metric_name = paste(metric_name, group_name, sep=&#39;_&#39;))
+
+wide_factors_tract &lt;- factors_data_tract %&gt;% pivot_wider(id_cols = c(state_abbr, city_name,
+                                                                     stcotr_fips),
+                                             names_from = metric_name,
+                                             values_from = est) %&gt;% 
+                      rename(tract_fips = stcotr_fips)</code></pre>
+<p>Step 3. Combine factors &amp; screen rates data</p>
+<pre class="r"><code>tract_tot &lt;- left_join(screen_data_tract, wide_factors_tract, by = c(&#39;state_abbr&#39;, 
+                                                        &#39;city_name&#39;, &#39;tract_fips&#39;))
+
+# column cleanup
+names(tract_tot) &lt;- names(tract_tot) %&gt;% str_to_lower() %&gt;%  str_replace_all(&#39; &#39;, &#39;_&#39;)%&gt;% 
+                           str_replace_all(c(&quot;_-_|,_&quot;), &#39;_&#39;)</code></pre>
+<pre class="r"><code>write_csv(tract_tot, &#39;data/census_tract_total_data.csv&#39;)</code></pre>
 </div>
 
 
