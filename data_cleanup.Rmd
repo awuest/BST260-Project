@@ -96,7 +96,7 @@ env <- list(2,12)
 all_measures = append(append(indiv_health, socioecon), env)
 
 factors_data <- chdb_metrics %>% filter((metric_number %in% all_measures) & 
-                                         data_yr_type != "2016-2018")  %>% # some cities have teen births & low brith weight reported for both 2015-2017 & 2016-2018
+                                         data_yr_type != "2016-2018")  %>% # some cities have teen births & low birth weight reported for both 2015-2017 & 2016-2018
                  select(c(state_abbr, city_name, metric_name, metric_number, data_yr_type,
                           group_name, group_number, 
                           num, denom, est, lci, uci))
@@ -144,7 +144,7 @@ write.xlsx(city_total_data, 'data/city_total_data.xlsx')
 
 
 ```{r}
-
+head(city_total_data)
 
 
 ```
@@ -168,11 +168,75 @@ names(screen_rate_tract)
 unique(screen_rate_tract$MeasureId)
 screen_metrics_t <- c("MAMMOUSE", "PAPTEST", "COREW")
 
-screen_data_t <- screen_rate_tract %>% filter(MeasureId %in% screen_metrics_t) %>%
+screen_data_t <- screen_rate_tract %>% filter((MeasureId %in% screen_metrics_t) &
+                                               (DataValueTypeID == 'CrdPrv'))%>% # age adjusted missing too many vals - only keep crude
                  select(c("StateAbbr", "CityName", 
                           "MeasureId", "DataValueTypeID",
                           "Data_Value", "Low_Confidence_Limit", "High_Confidence_Limit",
-                          "CityFIPS", "TractFIPS"))
+                          "CityFIPS", "TractFIPS")) %>%
+                 mutate(measure_name = paste(MeasureId, DataValueTypeID, sep = '_')) %>%
+                 select(-c(MeasureId, DataValueTypeID))
+
+
+
+head(screen_data_t)
+```
+
+```{r}
+col_ids = c("StateAbbr", "CityName", "CityFIPS", "TractFIPS")
+screen_data_tract <- screen_data_t %>% pivot_wider(id_cols = col_ids,
+                               names_from = measure_name,
+                               values_from = c(Data_Value, Low_Confidence_Limit, 
+                                               High_Confidence_Limit),
+                               names_glue = '{measure_name}_{.value}')
+
+names(screen_data_tract) <- c('state_abbr', 'city_name', 'city_fips', 'tract_fips',
+                              'paptest_crudeprev', 'mammouse_crudeprev', 'corew_curdeprev',
+                              'paptest_crude95_low_ci', 'mammouse_crude95_low_ci', 
+                              'corew_crude95_low_ci',
+                              'paptest_crude95_high_ci', 'mammouse_crude95_high_ci', 
+                              'corew_crude95_high_ci')
+
+
+```
+
+
+Step 2. Measures data from CHDB
+```{r}
+head(chdb_metrics_tract)
+
+# not all measures available at city level are available at tract level (e.g breast cancer mortality missing @ tract level)
+factors_data_tract <- chdb_metrics_tract %>% filter((metric_number %in% all_measures) )  %>% 
+                 select(c(state_abbr, city_name, stcotr_fips, 
+                          metric_name, metric_number, data_yr_type,
+                          group_name, group_number, 
+                          num, denom, est, lci, uci))
+
+factors_data_tract <- factors_data_tract %>% mutate(metric_name = paste(metric_name, group_name, sep='_'))
+
+wide_factors_tract <- factors_data_tract %>% pivot_wider(id_cols = c(state_abbr, city_name,
+                                                                     stcotr_fips),
+                                             names_from = metric_name,
+                                             values_from = est) %>% 
+                      rename(tract_fips = stcotr_fips)
+```
+Step 3. Combine factors & screen rates data
+```{r}
+tract_tot <- left_join(screen_data_tract, wide_factors_tract, by = c('state_abbr', 
+                                                        'city_name', 'tract_fips'))
+
+# column cleanup
+names(tract_tot) <- names(tract_tot) %>% str_to_lower() %>%  str_replace_all(' ', '_')%>% 
+                           str_replace_all(c("_-_|,_"), '_')
+
+
+
+
+```
+
+
+```{r}
+write.xlsx(tract_tot, 'data/census_tract_total_data.xlsx')
 
 ```
 
