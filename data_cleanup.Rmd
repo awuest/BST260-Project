@@ -93,8 +93,10 @@ indiv_health <- list(3, 6, 7, 8, 34, 35, 28, 22, 17)
 socioecon <- list(10, 13, 15, 33, 27, 25, 24, 21)
 env <- list(2,12)
 
-factors_data <- chdb_metrics %>% filter(metric_number %in% append(append(indiv_health, 
-                                                                  socioecon), env)) %>%
+all_measures = append(append(indiv_health, socioecon), env)
+
+factors_data <- chdb_metrics %>% filter((metric_number %in% all_measures) & 
+                                         data_yr_type != "2016-2018")  %>% # some cities have teen births & low brith weight reported for both 2015-2017 & 2016-2018
                  select(c(state_abbr, city_name, metric_name, metric_number, data_yr_type,
                           group_name, group_number, 
                           num, denom, est, lci, uci))
@@ -119,20 +121,58 @@ head(site_counts)
 ```
 
 Step 4: Merge higher level data into single df
+```{r}
+wide_factors <- factors_data %>% pivot_wider(id_cols = c(state_abbr, city_name),
+                                             names_from = metric_name,
+                                             values_from = est)
+```
 
 
 ```{r}
 
-wide_factors <- factors_data %>% pivot_wider(id_cols = c(state_abbr, city_name),
-                                             names_from = metric_name,
-                                             values_from = est)
-
 temp <- left_join(screen_data, wide_factors, by=c('state_abbr', 'city_name'))
 city_total_data <- left_join(temp, site_counts, by=c('state_abbr', 'city_name'))
+
+# column cleanup
+names(city_total_data) <- names(city_total_data) %>% str_to_lower() %>%  str_replace_all(' ', '_')%>% 
+                           str_replace_all(c("_-_|,_"), '_')
+
 
 write.xlsx(city_total_data, 'data/city_total_data.xlsx')
 
 ```
 
 
+```{r}
+
+
+
+```
+
 ## Lower Level Geography Focused Data
+
+Census Tract level data
+
+```{r}
+
+screen_rate_tract = read_csv('data/500_Cities__censustract.csv')
+chdb_metrics_tract = read_csv('data/CHDB_data_tract_allv10_1.csv')
+
+```
+
+1. Subset 500 cities data at census tract level to relevant screening metrics
+```{r}
+
+names(screen_rate_tract)
+
+unique(screen_rate_tract$MeasureId)
+screen_metrics_t <- c("MAMMOUSE", "PAPTEST", "COREW")
+
+screen_data_t <- screen_rate_tract %>% filter(MeasureId %in% screen_metrics_t) %>%
+                 select(c("StateAbbr", "CityName", 
+                          "MeasureId", "DataValueTypeID",
+                          "Data_Value", "Low_Confidence_Limit", "High_Confidence_Limit",
+                          "CityFIPS", "TractFIPS"))
+
+```
+
