@@ -1,0 +1,129 @@
+---
+title: "city_level_analysis"
+author: "Rowana Ahmed"
+date: "11/30/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Visualize national level trends
+
+```{r}
+library(openxlsx)
+library(tidyverse)
+library(maps)
+library(gridExtra)
+library(stringr)
+```
+
+
+#### Read in data
+
+```{r}
+dat <- read.xlsx('./data/city_total_data.xlsx', sheetIndex = 1)
+
+head(dat)
+```
+
+## Part I: Regression Analysis between Mammogram Usage & Breast Cancer Mortality
+
+#### Exploratory Data Analysis for Regression Model
+
+The outcome (breast cancer mortality) and primary covariates (mammogram usage) are mostly normally distributed. Breast cancer mortality does have some extreme values in the right tail. 
+```{r}
+
+p1 <- dat %>% ggplot() +
+        geom_histogram(aes(mammouse_crudeprev), col = 1) 
+
+p2 <- dat %>% ggplot() +
+        geom_histogram(aes(mammouse_adjprev), col = 1) 
+
+p3 <- dat %>% ggplot() +
+        geom_histogram(aes(breast_cancer_deaths_total_population), col = 1) 
+
+
+grid.arrange(p1, p2, p3, nrow =1 )
+
+
+```
+
+
+The loess curves indicate that there is an inverse relationship between mammography screenings and breast cancer mortality for both the crude & age adjusted mammography usage rates. Because the age adjusted mammography usage rate is better representative of the city population, we will be using this for the analysis moving forward. 
+
+```{r}
+
+
+p1 <- dat %>% ggplot(aes(mammouse_adjprev, breast_cancer_deaths_total_population)) +
+        geom_point() +
+        geom_smooth()  
+
+p2 <- dat %>% ggplot(aes(mammouse_crudeprev, breast_cancer_deaths_total_population)) + 
+        geom_point() +
+        geom_smooth()  
+
+
+grid.arrange(p1, p2, nrow =1 )
+
+
+```
+There seems to be a slight positive relationship between the raw number of mammography sites in a city and mammography usage, particularly at the lower number of sites (<10). 
+
+However, after accounting for the varying population sizes in a city, a stronger positive
+relationship seems to be present when looking at the correlation between sites per 1000 people in the population and the age adjusted mammography usage rate.
+
+
+```{r}
+p1 <- dat %>% ggplot(aes(number_sites, mammouse_adjprev)) + 
+        geom_point() +
+        geom_smooth()
+
+dat <- dat %>% mutate(sites_per_1000 = number_sites/(population2010/1000))
+p2  <-   dat %>% 
+        ggplot(aes(sites_per_1000, mammouse_adjprev)) + 
+        geom_point() +
+        geom_smooth()
+
+grid.arrange(p1, p2, nrow =1 )
+
+```
+
+
+
+
+## Part II: National Trends
+
+There are clear racial disparities in the rates of breast cancer deaths across the US cities,
+with Blacks experiencing much higher rates of breast cancer deaths than all other racial groups and the national average.
+
+# / TO DO - if include in shiny app, can have additional info per racial group on unemployment rates, uninsured rates, prenatal care, low birthweight, limited access to healthy food 
+
+```{r}
+
+cols <- names(dat)[str_detect(names(dat),'breast_cancer_death')]
+
+dat %>% select(cols) %>% pivot_longer(cols = cols,
+                                      names_to = "population", values_to = "deaths") %>% 
+             mutate(population = str_replace(population, "breast_cancer_deaths_", "")) %>%
+             mutate(population = str_replace(population, "total_population", "all")) %>% 
+             ggplot() + 
+             geom_violin(aes(population, deaths, fill = population), alpha = 0.5) +
+             geom_hline(yintercept= 24.4, lty = 2, col = 'grey') +   
+             geom_text(label = "national average", x = "asian", y= 28, hjust = "right",
+                       col = "darkgrey", size = 3) + 
+             ylab("deaths per 100,000 females") + 
+             ggtitle("Breast Cancer Deaths across US Cities") 
+                          
+                         
+```
+
+National Map
+
+# color by mammouse_adjprev/breast cancer mortality
+# overlay facilities
+
+Other screening: corew_adjprev, paptest_adjprev
+
+
