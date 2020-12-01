@@ -1,0 +1,299 @@
+---
+title: "US Cities - National Level Trends"
+author: "Rowana Ahmed"
+date: "11/30/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Visualize national level trends & model relationships between breast cancer mortality
+and preventive screening methods (mammography usage) across U.S. cities
+
+```{r, echo=FALSE, include=FALSE}
+library(readxl)
+library(tidyverse)
+library(maps)
+library(gridExtra)
+library(stringr)
+library(stringi)
+library(gam)
+```
+
+
+#### Load Data
+
+```{r}
+dat <- read_excel('./data/city_total_data.xlsx')
+```
+
+## Part I: Regression Analysis between Mammogram Usage & Breast Cancer Mortality
+
+### A. Exploratory Data Analysis for Regression Model
+
+The outcome (breast cancer mortality) and primary covariates (mammogram usage) are mostly normally distributed. Breast cancer mortality does have some extreme values in the right tail. 
+```{r}
+
+p1 <- dat %>% ggplot() +
+        geom_histogram(aes(mammouse_crudeprev), col = 1) 
+
+p2 <- dat %>% ggplot() +
+        geom_histogram(aes(mammouse_adjprev), col = 1) 
+
+p3 <- dat %>% ggplot() +
+        geom_histogram(aes(breast_cancer_deaths_total_population), col = 1) 
+
+
+grid.arrange(p1, p2, p3, nrow =1 )
+
+
+```
+
+
+The loess curves indicate that there is an inverse relationship between mammography screenings and breast cancer mortality for both the crude & age adjusted mammography usage rates. Because the age adjusted mammography usage rate is better representative of the city population, we will be using this for the analysis moving forward. 
+
+```{r}
+
+
+p1 <- dat %>% ggplot(aes(mammouse_adjprev, breast_cancer_deaths_total_population)) +
+        geom_point() +
+        geom_smooth()  
+
+p2 <- dat %>% ggplot(aes(mammouse_crudeprev, breast_cancer_deaths_total_population)) + 
+        geom_point() +
+        geom_smooth()  
+
+
+grid.arrange(p1, p2, nrow =1 )
+
+
+```
+
+There seems to be a slight positive relationship between the raw number of mammography sites in a city and mammography usage, particularly at the lower number of sites (<10). 
+
+However, after accounting for the varying population sizes in a city, a stronger positive
+relationship seems to be present when looking at the correlation between sites per 1000 people in the population and the age adjusted mammography usage rate.
+
+```{r}
+dat <- dat %>% mutate(sites_per_1000 = number_sites/(population2010/1000))
+```
+
+
+```{r}
+p1 <- dat %>% ggplot(aes(number_sites, mammouse_adjprev)) + 
+        geom_point() +
+        geom_smooth()
+
+p2  <-   dat %>% 
+        ggplot(aes(sites_per_1000, mammouse_adjprev)) + 
+        geom_point() +
+        geom_smooth()
+
+grid.arrange(p1, p2, nrow =1 )
+
+
+```
+
+
+
+
+### B. Linear Regression Model
+
+
+Initial Model fit examining relationship between mammography usage & breast cancer deaths
+```{r}
+red_mod <- lm(breast_cancer_deaths_total_population ~ mammouse_adjprev, data = dat)
+summary(red_mod)
+```
+
+
+Expanded model accounting for racial diversity, racial segregation, and unemployment factors. 
+
+The F-Test comparing the two model fits indicate that the full model is needed to explain the variance of the outcome (p<0.05), and the AIC score of the full model is lower than the reduced model (full model AIC 3146.121, reduced model AIC 3198.022), indicating that the full model better fits the observed data. 
+
+Categorize unemployment levels into above & below national average (median unemployment
+level is 5.9. 
+```{r}
+dat <- dat %>% mutate(high_unemployment = ifelse(unemployment_annual_neighborhood_level_total_population < 5.9, 
+                                                  0, 1))
+
+```
+
+```{r}
+
+full_mod <- lm(breast_cancer_deaths_total_population ~ mammouse_adjprev + 
+               racial_ethnic_diversity_total_population +
+               I(racial_ethnic_diversity_total_population**2) + 
+               neighborhood_racial_ethnic_segregation_total_population + 
+               #unemployment_annual_neighborhood_level_total_population,  
+               high_unemployment,  # categorical var has slightly better fit than continuous & is easier to interpret 
+          data = dat)
+summary(full_mod)
+```
+
+```{r}
+anova(red_mod, full_mod)
+```
+
+
+```{r}
+AIC(full_mod)
+AIC(red_mod)
+```
+
+#### Assess Potential Effect Modification
+
+Interaction term is not strictly significant at the alpha = 0.05 level. 
+```{r}
+
+em_mod <- lm(breast_cancer_deaths_total_population ~ mammouse_adjprev + 
+               racial_ethnic_diversity_total_population +
+               I(racial_ethnic_diversity_total_population**2) + 
+               neighborhood_racial_ethnic_segregation_total_population + 
+               unemployment_annual_neighborhood_level_total_population +
+               unemployment_annual_neighborhood_level_total_population*mammouse_adjprev, 
+          data = dat)
+summary(em_mod)
+
+```
+
+Categorical covariate for unemployment level reduces model fit compared to uncategorized model. 
+
+Effect modification is not supported by data in either the continuous or categorical model. 
+```{r}
+em_mod2 <- lm(breast_cancer_deaths_total_population ~ mammouse_adjprev + 
+               racial_ethnic_diversity_total_population +
+               I(racial_ethnic_diversity_total_population**2) + 
+               neighborhood_racial_ethnic_segregation_total_population + 
+               high_unemployment +
+               high_unemployment*mammouse_adjprev, 
+          data = dat)
+summary(em_mod2)
+
+```
+
+
+
+### C. Model Diagnostics
+
+The residuals are mostly randomly scattered with a few outliers where the observed breast cancer deaths
+are much greater than the predicted values from the model. This is also seen in the qq plot where 
+the residuals appear right skewed. This departure from normality does limit the accuracy of the standard errors
+of the beta coefficients, and may result in biased confidence interval calculations. However, the beta coefficients themselves are unbiased. 
+
+The leverage plot also shows that there are some potentially influential points in the dataset, which might
+be disproportionately driving the estimated coefficients. However, because we are relying on publicly available data, and do not have cause to believe there was measurement error or aberrant behavior explaining the influential points, we will use all data points to estimate the beta coefficients of the multiple linear
+regression model. 
+
+```{r}
+
+plot(full_mod)
+```
+
+### D. Model Summary 
+
+$$
+\begin{split}
+& E(\text{Number of breast cancer deaths/100,000 females}) = 23.9 \\
+& -0.18*\text{(% mammography use)} + \\
+& 0.38*\text{(racial & ethnic diversity)} - \\
+& 0.003*\text{(racial & ethnic diversity)}^2 + \\
+& 0.09*\text{(neighborhood segregation)} + \\
+& 2.93*\text{I(high unemployment)} 
+\end{split}
+$$ 
+
+The aggregated dataset was used to fit a multiple linear regression model to better understand the association between breast cancer mortality and screening rates, as well as socioeconomic factors, across 500 U.S. cities. The fitted model (Adjusted $R^2$ =  0.112) shows an inverse relationship between mammography usage and breast cancer mortality. Based on this model, a 10% increase in mammography usage in a city would reduce breast cancer mortality on average by 1.8 deaths per 100,000 females (95% CI: .34 - 3.2), adjusting for socioeconomic factors.
+
+It is also interesting to note that cities with racial segregation in neighborhoods and higher levels of minority groups have higher rates of breast cancer deaths. The city health dashboard quantifies racial segregation using an index that measures how evenly distributed racial/ethnic groups are across a city’s census tracks, where 0 represents a perfectly even distribution and 100 represents complete segregation. Based on this model, an increase in a city’s segregation score by 10 units on this index corresponds to an increase in the rate of breast cancer mortality on average by 0.9 deaths per 100,000 females (95% CI: 0.16 - 1.65), adjusting for all other factors. Segregated communities often have imbalanced resource allocation, with many communities of color lacking access to health care services and other social determinants known to positively impact health (e.g. public green spaces).
+
+Additionally, the city health dashboard measures the diversity of a city by quantifying the composition of racial/ethnic groups in the area. For this index, a 0 corresponds to a city where all residents belong to the same group and a 100 corresponds to a proportionate representation of each group in the area (this index does not account for the geographical distribution of groups within the city; that is captured by the segregation index). From the multiple linear regression model, we can conclude that a city where the diversity index is 10 units higher (i.e. more representation of different races/ethnicities) has on average 3.5 more breast cancer deaths per 100,000 females (95% CI: 1.26-5.74) than a city with a lower diversity index.
+
+This further highlights the disproportionate effect breast cancer mortality has on communities of color across US cities.
+
+ 
+ ### E. Limitations
+ 
+ The multiple linear regression model is fit using aggregated city level data, and does not provide 
+ insight into individual level health factors that may contribute to breast cancer mortality. Because of
+ the limited data source, there are possible unmeasured confounding effects at the individual level, such
+ as genetic predisposition to breast cancer and quality of individual care received, which could further
+ explain the association between breast cancer mortality and mammography rates.
+
+
+## Part II: National Trends across Racial Groups
+
+There are clear racial disparities in the rates of breast cancer deaths across the US cities,
+with Blacks experiencing much higher rates of breast cancer deaths than all other racial groups.
+
+
+```{r}
+dat %>%    pivot_longer(cols = starts_with('breast_cancer_deaths'),
+                        names_to = "population", values_to = "deaths") %>% 
+             mutate(population = str_replace(population, "breast_cancer_deaths_", "")) %>%
+             mutate(population = str_replace(population, "total_population", "all")) %>% 
+             ggplot() + 
+             geom_violin(aes(population, deaths, fill = population), alpha = 0.5) +
+             geom_hline(yintercept= 24.4, lty = 2, col = 'grey') +   
+             geom_text(label = "national average", x = "asian", y= 27, hjust = "center",
+                       col = 8, size = 3.3) + 
+             ylab("deaths per 100,000 females") + 
+             ggtitle("Breast Cancer Deaths across US Cities") 
+                          
+                         
+```
+
+Other health factors/social determinants:
+
+* high_school_completion               
+
+* limited_access_to_healthy_foods      
+
+* unemployment_annual_neighborhood_level
+
+* uninsured                                                                  
+
+* prenatal_care  
+
+* teen_births    
+
+
+```{r}
+race_vars <- names(dat)[names(dat) %>% str_detect("asian")] %>% str_replace("asian", "")
+
+temp <- names(dat)[names(dat) %>% str_detect(str_c(race_vars, collapse="|"))]
+race_cols <- temp[temp %>% str_detect("age|female|male", negate = TRUE)]
+ 
+race_dat <- dat %>% select(append(append(race_cols,  "city_name"), "state_abbr")) %>% 
+            pivot_longer(!c(city_name, state_abbr), 
+                         names_to = "measure", values_to = "estimate") %>%
+            mutate(measure = str_replace(measure, "total_population", "all")) %>%
+            mutate(measure = stri_replace_last_fixed(measure, '_', " ")) %>%
+            separate(measure, c("measure", "population"), sep = " ") %>% 
+            pivot_wider(id_cols = c(state_abbr, city_name, population),
+                       names_from = measure,
+                       values_from = estimate
+                       )
+
+```
+
+
+```{r}
+factor = "uninsured"
+
+race_dat %>% select(c("population", factor, "breast_cancer_deaths")) %>% drop_na() %>%  
+  ggplot() + 
+  geom_point(aes_string(x= factor, 
+                        y="breast_cancer_deaths", 
+                        fill = "population", 
+                        col = "population"), alpha = .5)  +
+  scale_y_sqrt() +
+  scale_x_sqrt() + 
+  ylab("breast cancer deaths per 100K (sqrt scale)") +
+  xlab(paste(str_replace_all(factor, "_", " "), ' (sqrt scale)'))
+```
+
+
+
