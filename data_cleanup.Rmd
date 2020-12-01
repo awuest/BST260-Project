@@ -49,7 +49,8 @@ screen_metrics <- c('StateAbbr', 'PlaceName', 'Population2010',
                    'MAMMOUSE_CrudePrev', 'MAMMOUSE_Crude95CI', 
                    'MAMMOUSE_AdjPrev', 'MAMMOUSE_Adj95CI',
                    'PAPTEST_CrudePrev', 'PAPTEST_Crude95CI', 
-                   'PAPTEST_AdjPrev', 'PAPTEST_Adj95CI')
+                   'PAPTEST_AdjPrev', 'PAPTEST_Adj95CI',
+                   'Geolocation')
 
 screen_data <-  screen_rate %>%
                 select(screen_metrics) %>% rename(state_abbr = StateAbbr,
@@ -192,7 +193,7 @@ screen_data_tract <- screen_data_t %>% pivot_wider(id_cols = col_ids,
                                names_glue = '{measure_name}_{.value}')
 
 names(screen_data_tract) <- c('state_abbr', 'city_name', 'city_fips', 'tract_fips',
-                              'paptest_crudeprev', 'mammouse_crudeprev', 'corew_curdeprev',
+                              'paptest_crudeprev', 'mammouse_crudeprev', 'corew_crudeprev',
                               'paptest_crude95_low_ci', 'mammouse_crude95_low_ci', 
                               'corew_crude95_low_ci',
                               'paptest_crude95_high_ci', 'mammouse_crude95_high_ci', 
