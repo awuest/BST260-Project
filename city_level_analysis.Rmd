@@ -33,7 +33,12 @@ dat <- read_excel('./data/city_total_data.xlsx')
 
 ### A. Exploratory Data Analysis for Regression Model
 
-The outcome (breast cancer mortality) and primary covariates (mammogram usage) are mostly normally distributed. Breast cancer mortality does have some extreme values in the right tail. 
+The outcome (breast cancer mortality rate) and primary covariates (mammogram usage rate) are mostly normally distributed. Breast cancer mortality does have some extreme values in the right tail, which could 
+lead to biased error estimates. 
+
+Because the outcome is a rate, a Poisson regression model was initially considered. However, the
+distribution of outcome values does not follow the characteristic Poisson curve for small $\lambda$ values
+for which a Poisson regression model would be necessary for unbiased estimation. At larger Poisson $\lambda$ values, Poisson distributions of rates converge to normal distributions, and so breast cancer mortality rates can be approximated with a normal distribution. Thus, a multiple linear regression model is presumed to be a valid modeling approach for the outcome. 
 ```{r}
 
 p1 <- dat %>% ggplot() +
@@ -97,6 +102,35 @@ grid.arrange(p1, p2, nrow =1 )
 ```
 
 
+Assess Potential Multicollinearity & Associations with Breast Cancer Mortality (outcome)
+```{r}
+library(corrplot)
+# chdb factors
+vars <- c(c("breast_cancer_deaths_total_population",  
+            
+            "air_pollution_particulate_matter_total_population",
+            "housing_with_potential_lead_risk_total_population",
+            "walkability_total_population", 
+            "limited_access_to_healthy_foods_total_population",
+            
+            "binge_drinking_total_population", 
+            "diabetes_total_population",
+            "obesity_total_population",
+            "smoking_total_population",
+            
+            "unemployment_annual_neighborhood_level_total_population",
+            "income_inequality_total_population",
+            "neighborhood_racial_ethnic_segregation_total_population",
+            "racial_ethnic_diversity_total_population",
+           
+             "number_sites",
+             "sites_per_1000"
+            ),
+          c("mammouse_adjprev", "corew_adjprev", "paptest_adjprev"))
+covars <- dat %>% select(vars) %>% drop_na()
+corrplot(cor(covars), tl.cex = 0.4)
+
+```
 
 
 ### B. Linear Regression Model
@@ -175,7 +209,6 @@ summary(em_mod2)
 ```
 
 
-
 ### C. Model Diagnostics
 
 The residuals are mostly randomly scattered with a few outliers where the observed breast cancer deaths
@@ -192,6 +225,32 @@ regression model.
 plot(full_mod)
 ```
 
+#### Robust Sandwich Errors for Coefficient Estimates
+
+Because the residual plot depicts a violation of homoscedasticity and the qq plot
+illustrates deviation from normality, robust sandwich estimation methods were used to
+calculate the standard errors for the coefficients. This method is more robust than the
+standard LSE method for estimating the standard errors, and can be used to derive more
+accurate confidence intervals. 
+
+```{r}
+library(lmtest)
+library(sandwich)
+coeftest(full_mod, vcov = vcovHC(full_mod, type="HC1"))
+
+```
+
+```{r}
+# Confidence Intervals
+(-0.17710763 + c(-1,1)*1.96*0.07330049)*10 #95% ci for mammouse
+(0.09382556 + c(-1,1)*1.96*0.03882091 )*10  #95% ci for segregation
+(0.38327790 + c(-1,1)*1.96*0.09593687)*10 +
+(-0.00311095+ c(-1,1)*1.96*0.00082338)*10**2 #95% ci for diversity
+
+
+```
+
+
 ### D. Model Summary 
 
 $$
@@ -205,16 +264,17 @@ $$
 \end{split}
 $$ 
 
-The aggregated dataset was used to fit a multiple linear regression model to better understand the association between breast cancer mortality and screening rates, as well as socioeconomic factors, across 500 U.S. cities. The fitted model (Adjusted $R^2$ =  0.112) shows an inverse relationship between mammography usage and breast cancer mortality. Based on this model, a 10% increase in mammography usage in a city would reduce breast cancer mortality on average by 1.8 deaths per 100,000 females (95% CI: .34 - 3.2), adjusting for socioeconomic factors.
+The aggregated dataset was used to fit a multiple linear regression model to better understand the association between breast cancer mortality and screening rates, as well as socioeconomic factors, across 500 U.S. cities. The fitted model ($R^2_{Adjusted }$ =  0.112) shows an inverse relationship between mammography usage and breast cancer mortality. Based on this model, a 10% increase in mammography usage in a city would reduce breast cancer mortality on average by 1.8 deaths per 100,000 females (95% CI: .34 - 3.2), adjusting for socioeconomic factors.
 
-It is also interesting to note that cities with racial segregation in neighborhoods and higher levels of minority groups have higher rates of breast cancer deaths. The city health dashboard quantifies racial segregation using an index that measures how evenly distributed racial/ethnic groups are across a city’s census tracks, where 0 represents a perfectly even distribution and 100 represents complete segregation. Based on this model, an increase in a city’s segregation score by 10 units on this index corresponds to an increase in the rate of breast cancer mortality on average by 0.9 deaths per 100,000 females (95% CI: 0.16 - 1.65), adjusting for all other factors. Segregated communities often have imbalanced resource allocation, with many communities of color lacking access to health care services and other social determinants known to positively impact health (e.g. public green spaces).
+It is also interesting to note that cities with racial segregation in neighborhoods and higher levels of minority groups have higher rates of breast cancer deaths. The city health dashboard quantifies racial segregation using an index that measures how evenly distributed racial/ethnic groups are across a city’s census tracks, where 0 represents a perfectly even distribution and 100 represents complete segregation. Based on this model, an increase in a city’s segregation score by 10 units on this index corresponds to an increase in the rate of breast cancer mortality on average by 0.9 deaths per 100,000 females (95% CI: 0.18 - 1.7), adjusting for all other factors. Segregated communities often have imbalanced resource allocation, with many communities of color lacking access to health care services and other social determinants known to positively impact health (e.g. public green spaces).
 
-Additionally, the city health dashboard measures the diversity of a city by quantifying the composition of racial/ethnic groups in the area. For this index, a 0 corresponds to a city where all residents belong to the same group and a 100 corresponds to a proportionate representation of each group in the area (this index does not account for the geographical distribution of groups within the city; that is captured by the segregation index). From the multiple linear regression model, we can conclude that a city where the diversity index is 10 units higher (i.e. more representation of different races/ethnicities) has on average 3.5 more breast cancer deaths per 100,000 females (95% CI: 1.26-5.74) than a city with a lower diversity index.
+Additionally, the city health dashboard measures the diversity of a city by quantifying the composition of racial/ethnic groups in the area. For this index, a 0 corresponds to a city where all residents belong to the same group and a 100 corresponds to a proportionate representation of each group in the area (this index does not account for the geographical distribution of groups within the city; that is captured by the segregation index). From the multiple linear regression model, we can conclude that a city where the diversity index is 10 units higher (i.e. more representation of different races/ethnicities) has on average 3.5 more breast cancer deaths per 100,000 females (95% CI: 1.48-5.56) than a city with a lower diversity index.
 
 This further highlights the disproportionate effect breast cancer mortality has on communities of color across US cities.
 
+
  
- ### E. Limitations
+### E. Limitations
  
  The multiple linear regression model is fit using aggregated city level data, and does not provide 
  insight into individual level health factors that may contribute to breast cancer mortality. Because of
@@ -223,7 +283,28 @@ This further highlights the disproportionate effect breast cancer mortality has 
  explain the association between breast cancer mortality and mammography rates.
 
 
+
+
 ## Part II: National Trends across Racial Groups
+
+```{r}
+p <- dat %>% ggplot(aes(racial_ethnic_diversity_total_population, 
+                          neighborhood_racial_ethnic_segregation_total_population,  
+                        fill = breast_cancer_deaths_total_population)) +
+        geom_tile(color = "grey80") +
+        scale_x_binned(n.breaks = 10) + 
+        scale_y_binned(n.breaks = 10)  + 
+        scale_fill_viridis_c(trans="log10", name = "death rate" ) +
+        #theme(axis.text.y = element_text(angle = 30, size = 6)) + 
+        ggtitle("Breast Cancer Deaths per 100,000") + 
+        ylab("neighborhood segregation") + 
+        xlab("racial/ethnic diversity") 
+
+print(p)
+
+
+```
+
 
 There are clear racial disparities in the rates of breast cancer deaths across the US cities,
 with Blacks experiencing much higher rates of breast cancer deaths than all other racial groups.
