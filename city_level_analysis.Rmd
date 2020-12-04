@@ -177,6 +177,27 @@ AIC(full_mod)
 AIC(red_mod)
 ```
 
+#### Consider Health Factors
+
+Health factors such as smoking, binge drinking, and diabetes are not statistically
+significant predictors (p>0.05) either in complete model or through forward selection
+method where each variable is added individually.
+```{r}
+h1 <- lm(breast_cancer_deaths_total_population ~ mammouse_adjprev + 
+               racial_ethnic_diversity_total_population +
+               I(racial_ethnic_diversity_total_population**2) + 
+               neighborhood_racial_ethnic_segregation_total_population +
+               high_unemployment +
+               diabetes_total_population + 
+               binge_drinking_total_population + 
+               smoking_total_population,
+          data = dat)
+summary(h1)
+
+```
+
+
+
 #### Assess Potential Effect Modification
 
 Interaction term is not strictly significant at the alpha = 0.05 level. 
@@ -284,7 +305,6 @@ This further highlights the disproportionate effect breast cancer mortality has 
 
 
 
-
 ## Part II: National Trends across Racial Groups
 
 Breast cancer mortality is lowest in bottom left quadrant where segregation & 
@@ -330,7 +350,7 @@ dat %>%    pivot_longer(cols = starts_with('breast_cancer_deaths'),
                          
 ```
 
-_Exploratory Analysis in Shiny App:_
+_Exploratory Analysis for Shiny App:_
 
 Other health factors/social determinants (data available with racial breakdown):
 
