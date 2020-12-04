@@ -287,6 +287,10 @@ This further highlights the disproportionate effect breast cancer mortality has 
 
 ## Part II: National Trends across Racial Groups
 
+Breast cancer mortality is lowest in bottom left quadrant where segregation & 
+diversity are lowest, and greatest at the top right quadrant where segregation & diversity
+are highest. 
+
 ```{r}
 p <- dat %>% ggplot(aes(racial_ethnic_diversity_total_population, 
                           neighborhood_racial_ethnic_segregation_total_population,  
@@ -326,7 +330,11 @@ dat %>%    pivot_longer(cols = starts_with('breast_cancer_deaths'),
                          
 ```
 
-Other health factors/social determinants:
+_Exploratory Analysis in Shiny App:_
+
+Other health factors/social determinants (data available with racial breakdown):
+
+* breast_cancer_deaths
 
 * high_school_completion               
 
@@ -338,33 +346,54 @@ Other health factors/social determinants:
 
 * prenatal_care  
 
-* teen_births    
+* teen_births
+
+* low_birthweight
 
 
+Data Prep
 ```{r}
+# identify all metrics available w/ racial breakdown in data frame
 race_vars <- names(dat)[names(dat) %>% str_detect("asian")] %>% str_replace("asian", "")
-
-temp <- names(dat)[names(dat) %>% str_detect(str_c(race_vars, collapse="|"))]
-race_cols <- temp[temp %>% str_detect("age|female|male", negate = TRUE)]
+# identify specific col names that contain race metric
+temp <- names(dat)[names(dat) %>% str_detect(str_c(race_vars, collapse="|"))] 
+# filter out age/gender cols since some metrics available at race, as well as gender/age breakdown
+race_cols <- temp[temp %>% str_detect("age|female|male", negate = TRUE)]  # final list of race related metric col names
  
 race_dat <- dat %>% select(append(append(race_cols,  "city_name"), "state_abbr")) %>% 
             pivot_longer(!c(city_name, state_abbr), 
                          names_to = "measure", values_to = "estimate") %>%
             mutate(measure = str_replace(measure, "total_population", "all")) %>%
             mutate(measure = stri_replace_last_fixed(measure, '_', " ")) %>%
-            separate(measure, c("measure", "population"), sep = " ") %>% 
-            pivot_wider(id_cols = c(state_abbr, city_name, population),
-                       names_from = measure,
-                       values_from = estimate
-                       )
+            separate(measure, c("measure", "population"), sep = " ")
+
+
+           
 
 ```
 
+```{r}
+factor = "low_birthweight" # select from list above (race_vars) [user input in shiny app]
+
+factor_label  = str_replace_all(factor, "_", " ")
+race_dat %>% filter(measure == factor) %>%  ggplot() + 
+             geom_violin(aes(population, estimate, fill = population), alpha = 0.5)  +
+             ylab(factor_label) +
+             ggtitle(paste(str_to_title(factor_label), 
+                           "across U.S. Cities"))
+    
+```
+
+
+Compare factor against breast cancer mortality
 
 ```{r}
-factor = "uninsured"
 
-race_dat %>% select(c("population", factor, "breast_cancer_deaths")) %>% drop_na() %>%  
+race_dat %>%  pivot_wider(id_cols = c(state_abbr, city_name, population),
+                       names_from = measure,
+                       values_from = estimate
+                       ) %>%
+  select(c("population", factor, "breast_cancer_deaths")) %>% drop_na() %>%  
   ggplot() + 
   geom_point(aes_string(x= factor, 
                         y="breast_cancer_deaths", 
@@ -373,7 +402,10 @@ race_dat %>% select(c("population", factor, "breast_cancer_deaths")) %>% drop_na
   scale_y_sqrt() +
   scale_x_sqrt() + 
   ylab("breast cancer deaths per 100K (sqrt scale)") +
-  xlab(paste(str_replace_all(factor, "_", " "), ' (sqrt scale)'))
+  xlab(paste(factor_label, '(sqrt scale)')) +
+  ggtitle(paste("Breast Cancer Deaths vs", 
+                str_to_title(factor_label))
+          )
 ```
 
 
