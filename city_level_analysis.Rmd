@@ -79,10 +79,10 @@ grid.arrange(p1, p2, nrow =1 )
 There seems to be a slight positive relationship between the raw number of mammography sites in a city and mammography usage, particularly at the lower number of sites (<10). 
 
 However, after accounting for the varying population sizes in a city, a stronger positive
-relationship seems to be present when looking at the correlation between sites per 1000 people in the population and the age adjusted mammography usage rate.
+relationship seems to be present when looking at the correlation between sites per 100,000 people in the population and the age adjusted mammography usage rate.
 
 ```{r}
-dat <- dat %>% mutate(sites_per_1000 = number_sites/(population2010/1000))
+dat <- dat %>% mutate(sites_per_100K = number_sites/(population2010/100000))
 ```
 
 
@@ -92,7 +92,7 @@ p1 <- dat %>% ggplot(aes(number_sites, mammouse_adjprev)) +
         geom_smooth()
 
 p2  <-   dat %>% 
-        ggplot(aes(sites_per_1000, mammouse_adjprev)) + 
+        ggplot(aes(sites_per_100K, mammouse_adjprev)) + 
         geom_point() +
         geom_smooth()
 
@@ -124,7 +124,7 @@ vars <- c(c("breast_cancer_deaths_total_population",
             "racial_ethnic_diversity_total_population",
            
              "number_sites",
-             "sites_per_1000"
+             "sites_per_100K"
             ),
           c("mammouse_adjprev", "corew_adjprev", "paptest_adjprev"))
 covars <- dat %>% select(vars) %>% drop_na()
@@ -318,7 +318,7 @@ p <- dat %>% ggplot(aes(racial_ethnic_diversity_total_population,
         geom_tile(color = "grey80") +
         scale_x_binned(n.breaks = 10) + 
         scale_y_binned(n.breaks = 10)  + 
-        scale_fill_viridis_c(trans="log10", name = "death rate" ) +
+        scale_fill_viridis_c(trans="log10", name = "death rate", direction = -1 ) +
         #theme(axis.text.y = element_text(angle = 30, size = 6)) + 
         ggtitle("Breast Cancer Deaths per 100,000") + 
         ylab("neighborhood segregation") + 
@@ -426,6 +426,66 @@ race_dat %>%  pivot_wider(id_cols = c(state_abbr, city_name, population),
   ggtitle(paste("Breast Cancer Deaths vs", 
                 str_to_title(factor_label))
           )
+```
+
+The presence of additional mammography sites per 100,000 people does not reduce mortality
+in highly segregated neighborhoods; in fact mortality is highest in areas with 
+some of the highest number of sites (7.5 -10 per 100K) and highest levels of segregation.
+However, in areas where there are numerous sites accessible and the neighborhood segregation
+score is low, breast cancer mortality rates are the lowest. You can also see that an increase in the number of mammography sites is only advantageous for Black females in neighborhoods
+where the segregation score is low (less than the national average of 10.9).
+
+```{r}
+
+p <- dat %>% ggplot(aes(sites_per_100K, 
+                          neighborhood_racial_ethnic_segregation_total_population,  
+                        fill = breast_cancer_deaths_total_population)) +
+        geom_tile(color = "grey80") +
+        scale_x_binned(n.breaks = 5) + 
+        scale_y_binned(n.breaks = 10)  + 
+        scale_fill_viridis_c(trans = "log10", 
+                             name = "death rate", direction = -1) +
+        #theme(axis.text.y = element_text(angle = 30, size = 6)) + 
+        ggtitle("Breast Cancer Deaths per 100,000") + 
+        ylab("neighborhood segregation") + 
+        xlab("mammography sites per 100,000") 
+
+print(p)
+
+```
+
+```{r}
+
+cols = names(dat)[names(dat) %>% str_detect('breast_cancer_deaths')]
+
+p1 <- dat %>% filter(neighborhood_racial_ethnic_segregation_total_population >= 10.9) %>% 
+        select(append(cols, 'sites_per_100K')) %>% 
+        gather("population", "deaths", -sites_per_100K) %>%
+        mutate(population = str_replace(population, "breast_cancer_deaths_", "")) %>%
+        mutate(population = str_replace(population, "total_population", "all")) %>%
+        ggplot() +
+        geom_smooth(aes(sites_per_100K, deaths, col = population), se = FALSE) +
+        xlab('mammography sites per 100,000') +
+        ylab('deaths per 100,000 females') + 
+        ggtitle('High Levels of Neighborhood Segregation')
+
+
+p2 <- dat %>% filter(neighborhood_racial_ethnic_segregation_total_population < 10.9) %>% 
+        select(append(cols, 'sites_per_100K')) %>% 
+        gather("population", "deaths", -sites_per_100K) %>%
+        mutate(population = str_replace(population, "breast_cancer_deaths_", "")) %>%
+        mutate(population = str_replace(population, "total_population", "all")) %>%
+        ggplot() +
+        geom_smooth(aes(sites_per_100K, deaths, col = population), se = FALSE) +
+        xlab('mammography sites per 100,000') +
+        ylab('deaths per 100,000 females') + 
+        ggtitle('Low Levels of Neighborhood Segregation')
+
+
+print(p1)
+print(p2)
+
+  
 ```
 
 
