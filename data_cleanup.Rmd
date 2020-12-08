@@ -1,7 +1,5 @@
 ---
 title: "Data Wrangling"
-author: "Rowana Ahmed"
-date: "11/15/2020"
 output: html_document
 ---
 
@@ -16,6 +14,16 @@ library(xlsx)
 ```
 
 ## Read in Data
+
+1. Facilities Data is sourced from: https://www.fda.gov/radiation-emitting-products/consumer-information-mqsa/search-certified-facility
+
+2. 500 Cities Data is sourced from:
+https://chronicdata.cdc.gov/500-Cities-Places/500-Cities-City-level-Data-GIS-Friendly-Format-201/dxpw-cm5u (city level)
+
+https://chronicdata.cdc.gov/500-Cities-Places/500-Cities-Local-Data-for-Better-Health-2019-relea/6vp6-wxuq (tract level)
+
+3. City Health Dashboard data is sourced from:
+https://www.cityhealthdashboard.com/data-access (both city & tract)
 
 ```{r,  warning = FALSE}
 facilities = read_csv('data/mammography_facilities.csv')
