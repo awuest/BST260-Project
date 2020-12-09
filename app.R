@@ -95,7 +95,7 @@ ui <- fluidPage(theme = shinytheme("lumen"),
                                              
                                       ),
                                       column(width = 8,
-                                             verbatimTextOutput(outputId = "ScatterClickInfo"),
+                                             tableOutput(outputId = "ScatterClickInfo"),
                                              plotOutput(outputId = "BCVariableSelectorPlot",
                                                         click = clickOpts(id = "ScatterClickBCVar")
                                              )
@@ -256,7 +256,7 @@ server <- function(input, output) {
     })
     
     #This prints out the information based on what variables were selected by the user
-    output$ScatterClickInfo <- renderPrint({
+    output$ScatterClickInfo <- renderTable({
             city_click_info()    
         })
     
