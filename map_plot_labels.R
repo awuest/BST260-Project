@@ -5,7 +5,7 @@ map_labels <- function(var){
       BCLabel = "Mammography Use",
       BCCaption = "Mammography use among women aged 50-74 years (%)"
         ),
-    var == "breast_cancer_deaths_total_population" ~ c(
+    var %in% c("breast_cancer_deaths_total_population",  "breast_cancer_deaths") ~ c(
       BCLabel ="Breast Cancer Deaths",
       BCCaption = "Breast Cancer Deaths in females (per 100,000)"
         ),
@@ -18,7 +18,7 @@ map_labels <- function(var){
       VarCaption <- "Diabetes among adults aged ≥18 years (%)"
         ),
     
-    var == "teen_births_total_population"~ c( 
+    var %in% c("teen_births_total_population", "teen_births") ~ c( 
           VarLabel = "Teen Births",
           VarCaption = "Births to mothers aged 15-19 (per 1,000 females in that age group)"
         ),
@@ -39,7 +39,8 @@ map_labels <- function(var){
       VarLabel = "Frequent Physical Distress in Population",
       VarCaption = "Physical health not good for ≥14 days during the past 30 days among adults aged ≥18 years (%)" 
        ),
-   var == "high_school_completion_total_population"~ c(
+   var %in% c("high_school_completion_total_population",
+              "high_school_completion") ~ c(
      VarLabel = "High School Completion Rates",
      VarCaption = "Residents aged ≥25 with high school diploma, or equivalent, or higher degree (%)"
       ),
@@ -51,7 +52,8 @@ map_labels <- function(var){
     VarLabel = "Income Inequality",
     VarCaption = "Households with income at the extremes of the national income distribution (the top 20% or bottom 20%) (index)"
     ),
-  var == "limited_access_to_healthy_foods_total_population"~ c(
+  var %in% c("limited_access_to_healthy_foods_total_population",
+             "limited_access_to_healthy_foods") ~ c(
     VarLabel = "Limited Access to Healthy Foods",
     VarCaption = "Population living more than ½ mile from the nearest supermarket, supercenter, or large grocery store (%)"
     ),
@@ -67,7 +69,8 @@ map_labels <- function(var){
     VarLabel = "Smoking Rate",
     VarCaption = "Current smoking among adults aged ≥18 years (%)"
   ),
-  var == "unemployment_annual_neighborhood_level_total_population"~ c(
+  var %in% c("unemployment_annual_neighborhood_level_total_population",
+             "unemployment_annual_neighborhood_level")~ c(
     VarLabel = "Unemployment",
     VarCaption = "Civilian labor force that is unemployed, by month (%)"
   ),
@@ -75,13 +78,17 @@ map_labels <- function(var){
     VarLabel = "Unemployment",
     VarCaption = "Civilian labor force that is unemployed, by month (%)"
   ),
-  var == "prenatal_care_total_population"~ c(
+  var %in% c("prenatal_care_total_population", "prenatal_care")~ c(
     VarLabel = "Prenatal Care Use",
     VarCaption = "Births for which prenatal care began in the first trimester (%)"
   ), 
-  var == "low_birthweight_total_population"~ c(
-    VarLabel = "Low Birthweight in Population",
+  var %in% c("low_birthweight_total_population", "low_birthweight")~ c(
+    VarLabel = "Low Birthweight",
     VarCaption = "Live births with low birthweight <2500 grams (%)"
+  ),
+  var == "uninsured" ~ c(
+    VarLabel = "Uninsured Levels",
+    VarCaption = "Current lack of health insurance among people aged 0-64 years (%)"
   )
 )
   

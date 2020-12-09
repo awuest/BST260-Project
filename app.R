@@ -265,40 +265,11 @@ server <- function(input, output) {
     
     output$RaceEthPlot <- renderPlot({
         
-        #Reactive labels and caption for units
-        if (input$RaceEthVariable == "breast_cancer_deaths") {
-            RaceYLabel = "Breast Cancer Deaths"
-            RaceCaption = "Breast Cancer Deaths in females (per 100,000)"
-        }
-        else if (input$RaceEthVariable == "high_school_completion") {
-            RaceYLabel = "High School Completion"
-            RaceCaption = "Residents aged ≥25 with high school diploma, or equivalent, or higher degree (%)"
-        }
-        else if (input$RaceEthVariable == "limited_access_to_healthy_foods") {
-            RaceYLabel = "Limited Access to Healthy Foods"
-            RaceCaption = "Population living more than ½ mile from the nearest supermarket, supercenter, or large grocery store (%)"
-        }
-        else if (input$RaceEthVariable == "unemployment_annual_neighborhood_level") {
-            RaceYLabel = "Unemployment at Neighborhood Level"
-            RaceCaption = "Civilian labor force that is unemployed, by month (%)"
-        }
-        else if (input$RaceEthVariable == "uninsured") {
-            RaceYLabel = "Uninsured Levels"
-            RaceCaption = "Current lack of health insurance among people aged 0-64 years (%)"
-        }
-        else if (input$RaceEthVariable == "teen_births") {
-            RaceYLabel = "Teen Birth Levels"
-            RaceCaption = "Births to mothers aged 15-19 (per 1,000 females in that age group)"
-        }
-        else if (input$RaceEthVariable == "prenatal_care") {
-            RaceYLabel = "Prenatal Care Levels"
-            RaceCaption = "Births for which prenatal care began in the first trimester (%)"
-        }
-        else if (input$RaceEthVariable == "low_birthweight") {
-            RaceYLabel = "Low Birthweight Levels"
-            RaceCaption = "Live births with low birthweight <2500 grams (%)"
-        }
         
+        # #Reactive labels and caption for units
+        RaceYLabel = map_labels(input$RaceEthVariable)[1]
+        RaceCaption = map_labels(input$RaceEthVariable)[2]
+   
         race_eth_df() %>% ggplot() +
             geom_violin(aes(x = population, y = estimate, fill = population), alpha = 0.5) +
             labs(x = "Racial/Ethnic Population", y = RaceYLabel, fill = "Population", caption = sprintf("Measure Info/Units: %s", RaceCaption)) +
@@ -312,35 +283,9 @@ server <- function(input, output) {
                                         select(c("population", input$RaceEthScatterVar, "breast_cancer_deaths")) %>% drop_na())
     
     output$RaceEthScatter <- renderPlot({
-        #Reactive labels and captions for units
-        if (input$RaceEthScatterVar == "high_school_completion") {
-            RaceEthScatterLabel = "High School Completion"
-            RaceEthCaption = "Residents aged ≥25 with high school diploma, or equivalent, or higher degree (%)"
-        }
-        else if (input$RaceEthScatterVar == "limited_access_to_healthy_foods") {
-            RaceEthScatterLabel = "Limited Access to Healthy Foods"
-            RaceEthCaption = "Population living more than ½ mile from the nearest supermarket, supercenter, or large grocery store (%)"
-        }
-        else if (input$RaceEthScatterVar == "unemployment_annual_neighborhood_level") {
-            RaceEthScatterLabel = "Unemployment at Neighborhood Level"
-            RaceEthCaption = "Civilian labor force that is unemployed, by month (%)"
-        }
-        else if (input$RaceEthScatterVar == "uninsured") {
-            RaceEthScatterLabel = "Uninsured Levels"
-            RaceEthCaption = "Current lack of health insurance among people aged 0-64 years (%)"
-        }
-        else if (input$RaceEthScatterVar == "teen_births") {
-            RaceEthScatterLabel = "Teen Birth Levels"
-            RaceEthCaption = "Births to mothers aged 15-19 (per 1,000 females in that age group)"
-        }
-        else if (input$RaceEthScatterVar == "prenatal_care") {
-            RaceEthScatterLabel = "Prenatal Care Levels"
-            RaceEthCaption = "Births for which prenatal care began in the first trimester (%)"
-        }
-        else if (input$RaceEthScatterVar == "low_birthweight") {
-            RaceEthScatterLabel = "Low Birthweight Levels"
-            RaceEthCaption = "Live births with low birthweight <2500 grams (%)"
-        }
+        # #Reactive labels and captions for units
+        RaceEthScatterLabel = map_labels(input$RaceEthScatterVar)[1]
+        RaceEthCaption  = map_labels(input$RaceEthScatterVar)[2]
         
         race_eth_scatter_df() %>% ggplot() + 
             geom_point(aes_string(x= input$RaceEthScatterVar, 
@@ -427,62 +372,14 @@ server <- function(input, output) {
     #Tab 3 Heatmap - color is reactive based on variable selected
     output$HeatMapOfVariableNYC <- renderTmap({
         #reactive labelling
-        if (input$VarSelectionHeatMap == "air_pollution_particulate_matter_total_population") {
-            HeatMapLabel <- "Air Pollution Level"
-        }
-        else if (input$VarSelectionHeatMap == "mammouse_crudeprev") {
-            HeatMapLabel <- "Mammography Use"
-        }
-        else if (input$VarSelectionHeatMap == "diabetes_total_population") {
-            HeatMapLabel <- "Diabetes Rate"
-        }
-        else if (input$VarSelectionHeatMap == "binge_drinking_total_population") {
-            HeatMapLabel <- "Binge Drinking"
-        }
-        else if (input$VarSelectionHeatMap == "frequent_mental_distress_total_population") {
-            HeatMapLabel <- "Frequent Mental Distress in Population"
-        }
-        else if (input$VarSelectionHeatMap == "frequent_physical_distress_total_population") {
-            HeatMapLabel <- "Frequent Physical Distress in Population"
-        }
-        else if (input$VarSelectionHeatMap == "high_school_completion_total_population") {
-            HeatMapLabel <- "High School Completion Rates"
-        }
-        else if (input$VarSelectionHeatMap == "housing_with_potential_lead_risk_total_population") {
-            HeatMapLabel <- "Housing with Potential Lead Risk"
-        }
-        else if (input$VarSelectionHeatMap == "income_inequality_total_population") {
-            HeatMapLabel <- "Income Inequality"
-        }
-        else if (input$VarSelectionHeatMap == "limited_access_to_healthy_foods_total_population") {
-            HeatMapLabel <- "Limited Access to Healthy Foods"
-        }
-        else if (input$VarSelectionHeatMap == "obesity_total_population") {
-            HeatMapLabel <- "Obesity Rate"
-        }
-        else if (input$VarSelectionHeatMap == "racialethnic_diversity_total_population") {
-            HeatMapLabel <- "Racial/Ethnic Diversity in Population"
-        }
-        else if (input$VarSelectionHeatMap == "smoking_total_population") {
-            HeatMapLabel <- "Smoking Rate"
-        }
-        else if (input$VarSelectionHeatMap == "unemployment_annual_neighborhood_level_total_population") {
-            HeatMapLabel <- "Unemployment Rate"
-        }
-        else if (input$VarSelectionHeatMap == "uninsured_total_population") {
-            HeatMapLabel <- "Uninsured Rate"
-        }
-        else if (input$VarSelectionHeatMap == "prenatal_care_total_population") {
-            HeatMapLabel <- "Prenatal Care Use"
-        }
-        else if (input$VarSelectionHeatMap == "low_birthweight_total_population") {
-            HeatMapLabel <- "Low Birthweight in Population"
-        }
+        HeatMapLabel = map_labels(input$VarSelectionHeatMap)[1]
         
         #reactive coloring based on the variable selected
-        tm_shape(census_tracts_subset_data_nyc) + tm_fill(col = input$VarSelectionHeatMap, colorNA = "light gray", 
-                                                          palette = "Greens", title = "% of total population") + 
-            tm_legend(outside = TRUE, main.title = sprintf("Prevalence of %s in NYC", HeatMapLabel))
+        tm_shape(census_tracts_subset_data_nyc) + 
+        tm_fill(col = input$VarSelectionHeatMap, colorNA = "light gray", 
+                 palette = "Greens", title = "% of total population") + 
+        tm_legend(outside = TRUE, main.title = sprintf("Prevalence of %s in NYC", 
+                                                       HeatMapLabel)) 
     })
 }
 
