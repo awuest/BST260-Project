@@ -13,9 +13,8 @@ library(sf)
 library(tmap)
 
 #Read in data and wrangle a bit
-#NOTE - UPDATE SO ITS NOT JUST ON MY COMPUTER FOR FINAL SUBMISSION
-city_total_data <- read_excel("./data/city_total_data.xlsx")
-census_tract_total_data <- read_csv("./data/census_tract_total_data.csv")
+city_total_data <- read_excel("./data/city_total_data 2.xlsx")
+census_tract_total_data <- read_csv("./data/census_tract_total_data 2.csv")
 
 #Wrangling for Race/Eth portion of Tab 1
 # identify all metrics available w/ racial breakdown in data frame
@@ -25,20 +24,24 @@ temp <- names(city_total_data)[names(city_total_data) %>% str_detect(str_c(race_
 # filter out age/gender cols since some metrics available at race, as well as gender/age breakdown
 race_cols <- temp[temp %>% str_detect("age|female|male", negate = TRUE)]  # final list of race related metric col names
 
+#selecting race columns from above and formatting to long format
 race_dat <- city_total_data %>% select(append(append(race_cols,  "city_name"), "state_abbr")) %>% 
     pivot_longer(!c(city_name, state_abbr), 
                  names_to = "measure", values_to = "estimate") %>%
     mutate(measure = str_replace(measure, "total_population", "all")) %>%
     mutate(measure = stri_replace_last_fixed(measure, '_', " ")) %>%
-    separate(measure, c("measure", "population"), sep = " ")
+    separate(measure, c("measure", "population"), sep = " ") %>% 
+    mutate(population = str_to_title(population))
 
 #Wrangling for Tab 2
-city_total_data <- city_total_data %>% separate(geolocation, c("Latitude", "Longitude"), ", ") %>% 
-    mutate(Longitude = str_remove(Longitude, "[\\)]")) %>% 
+city_total_data <- city_total_data %>% separate(geolocation, c("Latitude", "Longitude"), ", ") %>% #Separates the geolocation data at the comma between the long/lat and makes two separate columns
+    mutate(Longitude = str_remove(Longitude, "[\\)]")) %>% #String processing necessary to remove the parentheses from the original geolocation formatting
     mutate(Latitude = str_remove(Latitude, "[\\()]"))
 
+#New dataframe that will be used for mapping selecting only the variables that will be used in the mapping part of the app; in addition, facilities variable is adjusted for each city's population
 usmappingdf <- city_total_data %>% mutate(AdjFacilities = (number_sites/population2010)*100000) %>% select(Longitude, Latitude, city_name, state_abbr, mammouse_adjprev, breast_cancer_deaths_total_population, AdjFacilities)
 
+#The transform function requires numeric values and the previous string processing store the long/lat as strings
 usmappingdf$Longitude <- as.numeric(as.character(usmappingdf$Longitude))
 usmappingdf$Latitude <- as.numeric(as.character(usmappingdf$Latitude))
 
@@ -48,17 +51,16 @@ mappabletransformeddf <- usmap_transform(usmappingdf)
 census_tract_total_data_nyc <- census_tract_total_data %>%
     filter(state_abbr == "NY", city_name == "New York")
 
-#UPDATE FIRST LINE FOR FINAL SUBMISSION
 census_tracts <- st_read("./data/cb_2018_36_tract_500k/cb_2018_36_tract_500k.shp", quiet = TRUE)
 colnames(census_tracts)[colnames(census_tracts) == "GEOID"] <- "tract_fips"
 census_tract_total_data_nyc$tract_fips <- as.character(census_tract_total_data_nyc$tract_fips)
 census_tracts_combined_data_nyc <- left_join(census_tracts, census_tract_total_data_nyc, by = "tract_fips")
 census_tracts_subset_data_nyc <- census_tracts_combined_data_nyc %>%
-    filter(state_abbr == "NY", city_name == "New York") %>% 
+    filter(state_abbr == "NY", city_name == "New York") %>% #needs to be filtered again
     rename("racial_ethnic_diversity_total_population" = `racial/ethnic_diversity_total_population`,
-           "unemployment_annual_neighborhood_level_total_population" = `unemployment_annual_neighborhood-level_total_population`)
+           "unemployment_annual_neighborhood_level_total_population" = `unemployment_annual_neighborhood-level_total_population`) #renamed for ease of use
 
-ui <- fluidPage(theme = shinytheme("lumen"),
+ui <- fluidPage(theme = shinytheme("flatly"),
                 titlePanel("Demographic and Health-Related Trends in 500 US Cities and Relation to  Mammography and Breast Cancer Mortality "),
                 
                 #First tab - variable of choice comparison + racial-ethnic
