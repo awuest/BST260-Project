@@ -13,8 +13,8 @@ library(sf)
 library(tmap)
 
 #Read in data and wrangle a bit
-city_total_data <- read_excel("./data/city_total_data 2.xlsx")
-census_tract_total_data <- read_csv("./data/census_tract_total_data 2.csv")
+city_total_data <- read_excel("./data/city_total_data.xlsx")
+census_tract_total_data <- read_csv("./data/census_tract_total_data.csv")
 
 #Wrangling for Race/Eth portion of Tab 1
 # identify all metrics available w/ racial breakdown in data frame
@@ -97,9 +97,9 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                              
                                       ),
                                       column(width = 8,
-                                             tableOutput(outputId = "ScatterClickInfo"),
+                                             tableOutput(outputId = "ScatterClickInfo"), #output for the below click feature
                                              plotOutput(outputId = "BCVariableSelectorPlot",
-                                                        click = clickOpts(id = "ScatterClickBCVar")
+                                                        click = clickOpts(id = "ScatterClickBCVar") #this allows users to click on a point in the scatterplot and return a tibble with the values corresponding to that point (i.e. find out the city that point corresponds to)
                                              )
                                       )
                              ),
@@ -114,11 +114,11 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                                                          "Uninsured Levels" = "uninsured",
                                                                          "Teen Births" = "teen_births",
                                                                          "Prenatal Care" = "prenatal_care",
-                                                                         "Low Birthweight" = "low_birthweight"
+                                                                         "Low Birthweight" = "low_birthweight" #these are the variables that have racial-ethnic breakdowns available
                                                           ))
                                       ),
                                       column(width = 8,
-                                             plotOutput(outputId = "RaceEthPlot"))
+                                             plotOutput(outputId = "RaceEthPlot")) #violin plot
                              ),
                              fluidRow(
                                  column(width = 4,
@@ -133,7 +133,7 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                                                     "Low Birthweight" = "low_birthweight"))
                                  ),
                                  column(width = 8,
-                                        plotOutput(outputId = "RaceEthScatter"))
+                                        plotOutput(outputId = "RaceEthScatter")) #scatterplot with breast cancer mortality correlated to the above-selected variable
                              )
                     ),
                     
@@ -164,12 +164,12 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                                  inputId = "city_selection",
                                                  label = "Select cities to map (max 10):",
                                                  choices = mappabletransformeddf$city_name,
-                                                 multiple = TRUE,
+                                                 multiple = TRUE, #allows users to select multiple cities to plot
                                                  options = list(maxItems = 10)
                                              )
                                       ),
                                       column(width = 6,
-                                             tableOutput(outputId = "city_info_table")
+                                             tableOutput(outputId = "city_info_table") #this table will output the information for the selected cities
                                       )
                              ),
                              fluidRow(
@@ -216,17 +216,18 @@ ui <- fluidPage(theme = shinytheme("flatly"),
 
 
 
-source("map_plot_labels.R") # custom function for labeling plots/tables
+source("map_plot_labels.R") #custom function for labeling plots/tables
 
 
 server <- function(input, output) {
     
     
-    #First tab scatterplot
+    #First tab scatterplot for all 500 ciites, non-stratified by race
     output$BCVariableSelectorPlot <- renderPlot({
+        #reactive labels for axes and captions taken from function file
         bc_labs = map_labels(input$BCVariable)
-        BCLabel = bc_labs[1]
-        BCCaption = bc_labs[2]
+        BCLabel = bc_labs[1] #selects first label from appropriate variable match based on user selection
+        BCCaption = bc_labs[2] #selects second label from list for appropriate variable match based on user selection
         
         var_labs = map_labels(input$VarSelection)
         VarLabel = var_labs[1]
@@ -235,7 +236,7 @@ server <- function(input, output) {
         city_total_data %>% 
             ggplot(aes_string(x=input$VarSelection, y=input$BCVariable)) + #aes_string since R stores user selections as a string
             geom_point() +
-            labs(x = VarLabel, y = BCLabel, caption = sprintf("Units as follows: %s and %s", BCCaption, VarCaption)) + #reactive labels
+            labs(x = VarLabel, y = BCLabel, caption = sprintf("Units as follows: %s and %s", BCCaption, VarCaption)) + #reactive labels and caption for metric info
             ggtitle(sprintf("%s and %s in 500 US Cities", BCLabel, VarLabel)) + #reactive plot title based on variables selected
             theme_bw()
     })
@@ -252,7 +253,7 @@ server <- function(input, output) {
  
         
         names(selected_df) = c("City", "State", BCLabel, VarLabel)
-        
+        #This prints out the information based on what variables were selected by the user
         return(selected_df)
         
     })
@@ -263,7 +264,7 @@ server <- function(input, output) {
         })
     
     #Tab 1 - race/eth section
-    race_eth_df <- reactive(race_dat %>% filter(measure == input$RaceEthVariable))
+    race_eth_df <- reactive(race_dat %>% filter(measure == input$RaceEthVariable)) #so that we are only looking at the selected measure in the plot
     
     output$RaceEthPlot <- renderPlot({
         
@@ -274,15 +275,15 @@ server <- function(input, output) {
    
         race_eth_df() %>% ggplot() +
             geom_violin(aes(x = population, y = estimate, fill = population), alpha = 0.5) +
-            labs(x = "Racial/Ethnic Population", y = RaceYLabel, fill = "Population", caption = sprintf("Measure Info/Units: %s", RaceCaption)) +
-            ggtitle(sprintf("Racial-Ethnic Breakdown of %s in US Cities", RaceYLabel))
+            labs(x = "Racial/Ethnic Population", y = RaceYLabel, fill = "Population", caption = sprintf("Measure Info/Units: %s", RaceCaption)) + #reactive label and caption
+            ggtitle(sprintf("Racial-Ethnic Breakdown of %s in US Cities", RaceYLabel)) #reactive title
     })
     
     #Reactive df for second race-eth plot
     race_eth_scatter_df <- reactive(race_dat %>% pivot_wider(id_cols = c(state_abbr, city_name, population),
                                                              names_from = measure,
                                                              values_from = estimate) %>%
-                                        select(c("population", input$RaceEthScatterVar, "breast_cancer_deaths")) %>% drop_na())
+                                        select(c("population", input$RaceEthScatterVar, "breast_cancer_deaths")) %>% drop_na()) #so that we are only using the race ("population"), selected variable, and BC deaths
     
     output$RaceEthScatter <- renderPlot({
         # #Reactive labels and captions for units
@@ -290,16 +291,16 @@ server <- function(input, output) {
         RaceEthCaption  = map_labels(input$RaceEthScatterVar)[2]
         
         race_eth_scatter_df() %>% ggplot() + 
-            geom_point(aes_string(x= input$RaceEthScatterVar, 
+            geom_point(aes_string(x= input$RaceEthScatterVar, #aes_string since Shiny stores the selections as strings
                                   y= "breast_cancer_deaths", 
                                   fill = "population", 
                                   color = "population"), alpha = .5)  +
-            scale_y_sqrt() +
-            scale_x_sqrt() + 
+            scale_y_sqrt() + #scale transformations for better visualization
+            scale_x_sqrt() + #scale transformations for better visualization
             ylab("Breast Cancer Deaths per 100K (sqrt scale)") +
             xlab(sprintf("%s (sqrt scale)", RaceEthScatterLabel)) +
-            labs(fill = "Population", color = "Population", caption = sprintf("Measure Info/Units: %s", RaceEthCaption)) + #Capitalizing legend title
-            ggtitle(sprintf("%s and Breast Cancer Deaths Across Race and Ethinicity Groups", RaceEthScatterLabel))
+            labs(fill = "Population", color = "Population", caption = sprintf("Measure Info/Units: %s", RaceEthCaption)) + #Capitalizing legend title + reactive caption for metric info
+            ggtitle(sprintf("%s and Breast Cancer Deaths Across Race and Ethinicity Groups", RaceEthScatterLabel)) #reactive title
         
     })
     
@@ -320,19 +321,19 @@ server <- function(input, output) {
         
         #Reactive scale limits based on measure chosen so that it will be consistent across cities chosen
         if (input$BCM_or_Mammo == "mammouse_adjprev") {
-            BCLimit <- c(60, 85)
+            BCLimit <- c(60, 85) #range to encompass largest and smallest values
         }
         else if (input$BCM_or_Mammo == "breast_cancer_deaths_total_population") {
-            BCLimit <- c(10, 55)
+            BCLimit <- c(10, 55) #range to encompass largest and smallest values
         }
         
-        #This is the plot that allows users to select up to 10 cities to plot to compare measures
+        #This is the plot that allows users to select ~10 cities to plot to compare measures
         plot_usmap() +
-            geom_point(data = city_selected_df(),
-                       aes_string(x = "Longitude.1",
+            geom_point(data = city_selected_df(), #reactive df used
+                       aes_string(x = "Longitude.1", #these are spatially transformed coordinates
                                   y = "Latitude.1",
-                                  size = "AdjFacilities",
-                                  color = input$BCM_or_Mammo),
+                                  size = "AdjFacilities", #dot changes size according to number of mammo facilites per population size
+                                  color = input$BCM_or_Mammo), #color changes according to continous scale
                        alpha = 1) +
             scale_color_viridis_c(option = "viridis", direction = -1, limits = BCLimit) + #direction -1 reverses the order of the coloring so it goes lighter to darker
             theme(legend.position = "bottom") +
@@ -341,8 +342,8 @@ server <- function(input, output) {
     
     #This table displays the statistics for the cities selected
     output$city_info_table <- renderTable(
-        city_selected_df() %>% 
-            select(city_name, state_abbr, AdjFacilities, mammouse_adjprev, breast_cancer_deaths_total_population) %>% 
+        city_selected_df() %>% #reactive df used
+            select(city_name, state_abbr, AdjFacilities, mammouse_adjprev, breast_cancer_deaths_total_population) %>% #only want to report these
             rename("City" = "city_name",
                    "State" = "state_abbr",
                    "Number of Facilities per 100,000 people" = "AdjFacilities",
@@ -352,6 +353,7 @@ server <- function(input, output) {
     
     #This is the overall national map that only reacts to the user selected BC variable
     output$NationalMap <- renderPlot({
+        #reactive labels
         if (input$BCM_or_Mammo_National == "mammouse_adjprev") {
             BCLabelNat <- "Mammography Use"
         }
@@ -361,7 +363,7 @@ server <- function(input, output) {
         
         plot_usmap() +
             geom_point(data = mappabletransformeddf, #uses the spatially-transformed df
-                       aes_string(x = "Longitude.1", 
+                       aes_string(x = "Longitude.1", #spatially-transformed coordinates from usmaptransform function
                                   y = "Latitude.1",
                                   size = "AdjFacilities", #size of dot reacts based on the number of facilities in that city
                                   color = input$BCM_or_Mammo_National), #reacts based on the input by the user
@@ -372,7 +374,7 @@ server <- function(input, output) {
     })
     
     #Tab 3 Heatmap - color is reactive based on variable selected
-    output$HeatMapOfVariableNYC <- renderTmap({
+    output$HeatMapOfVariableNYC <- renderTmap({ #tmap is the type of plot used for these census tract data
         #reactive labelling
         HeatMapLabel = map_labels(input$VarSelectionHeatMap)[1]
         
