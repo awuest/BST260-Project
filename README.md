@@ -1,6 +1,6 @@
 # BST260 Final Project: Trends in Breast Cancer Screening & Mortality
 
-#### Authors: Anna Wuest, Colleen McGarth, Dougie Zubizarreta, Rowana Ahmed
+#### Authors: Anna Wuest, Colleen McGrath, Dougie Zubizarreta, Rowana Ahmed
 
 
 We are motivated by the well-documented racial/ethnic and socioeconomic disparities in breast cancer screening, treatment, and outcomes. 
