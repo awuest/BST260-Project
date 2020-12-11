@@ -11,7 +11,7 @@ The goals of our project are the following:
 
 * At the census tract level within the city of New York City, we are interested in examining potential social and structural determinants of mammography use by examining the relationship between factors such as obesity, diabetes, insurance status, income inequality, racial/ethnic diversity, % high school completion and so on, and  rates of mammography use. 
 
-Additional info can be found on our [website](https://sites.google.com/d/1B4oTazeljjY-giTvxYUiEdA9Bd3nTbcN/p/18x8x3HGFiv9y42MlFVAVN55WpPlc0jrm/edit) or by viewing our [screencast]().
+Additional info can be found on our [website](https://sites.google.com/view/bst260project-group1/home) or by viewing our [screencast](https://www.youtube.com/watch?v=vy-moLAHpOY&feature=emb_logo).
 
 ### 1. Key Files in Repository
 
@@ -36,7 +36,7 @@ labels. Please refer to Section 3 if you're unable to access the data needed to 
 There are two ways to access the source data used in this project:
 
   * Data is available in this repository in the ./data directory 
-if git LFS is installed on your machine. (The git lfs pull command should allow you to access the component files of the data folder)
+if git LFS is installed on your machine. (The < git lfs pull > command should allow you to access the files housed in the data folder)
   
   * Otherwise, the data can also be accessed on Dropbox using this link: https://www.dropbox.com/sh/8qbku2qxk85f31x/AABfbUPHavzU_A4215AxAVqHa?dl=0
 You will need to copy the data folder into the directory for this repository to

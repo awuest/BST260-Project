@@ -369,11 +369,17 @@ summary {
 <h1>BST260 Final Project: Trends in Breast Cancer Screening &amp; Mortality</h1>
 <div id="authors-anna-wuest-colleen-mcgarth-dougie-zubizarreta-rowana-ahmed" class="section level4">
 <h4>Authors: Anna Wuest, Colleen McGarth, Dougie Zubizarreta, Rowana Ahmed</h4>
-<p>Project Website: &lt;&gt;</p>
+<p>We are motivated by the well-documented racial/ethnic and socioeconomic disparities in breast cancer screening, treatment, and outcomes.</p>
+<p>The goals of our project are the following:</p>
+<ul>
+<li><p>At the city level for all 500 cities featured in the 500 Cities Project, we are interested in providing an overview of mammography use and breast cancer mortality rates as well as facilities offering mammography services.</p></li>
+<li><p>At the census tract level within the city of New York City, we are interested in examining potential social and structural determinants of mammography use by examining the relationship between factors such as obesity, diabetes, insurance status, income inequality, racial/ethnic diversity, % high school completion and so on, and rates of mammography use.</p></li>
+</ul>
+<p>Additional info can be found on our <a href="https://sites.google.com/view/bst260project-group1/home">website</a> or by viewing our <a href="https://www.youtube.com/watch?v=vy-moLAHpOY&amp;feature=emb_logo">screencast</a>.</p>
 </div>
 <div id="key-files-in-repository" class="section level3">
 <h3>1. Key Files in Repository</h3>
-<p>The summary file for the project is <em>project_overview</em> (html/.Rmd). This file also has links to supplemental htmls, which includes more detailed analysis.</p>
+<p>The summary file for the project is <strong>project_overview</strong> (html/.Rmd). This file also has links to supplemental htmls, which includes more detailed analysis.</p>
 <p>Supplemental Files (html/.Rmd):</p>
 <ul>
 <li>data_cleanup [primary location for data wrangling/aggregation]</li>
@@ -383,14 +389,15 @@ summary {
 </div>
 <div id="rshiny-app" class="section level3">
 <h3>2. RShiny app</h3>
-<p>In addition to the analysis presented in the Project Overview file and the website, we have created an analytics tool to help users explore national and NYC level trends in breast cancer mortality &amp; mammography usage. We hope this tool can help users delve deep into the data and explore various associations between metrics of interest. The Rshiny app can be launched by running the <em>app.R</em> file.</p>
+<p>In addition to the analysis presented in the Project Overview file and the website, we have created an analytics tool to help users explore national and NYC level trends in breast cancer mortality &amp; mammography usage. We hope this tool can help users delve deep into the data and explore various associations between metrics of interest. The RShiny app can be launched by running the <strong>app.R</strong> file.</p>
+<p>The RShiny app depends on the map_plot_labels.R file to map the units &amp; axes/table labels. Please refer to Section 3 if you’re unable to access the data needed to launch the app.</p>
 </div>
 <div id="data-sources" class="section level3">
 <h3>3. Data Sources:</h3>
 <p>There are two ways to access the source data used in this project:</p>
 <ul>
-<li><p>Data is available in this repository if git LFS is installed on your machine. (The git lfs pull command should allow you to access the component files of the data folder)</p></li>
-<li><p>Otherwise, the data can also be accessed on Dropbox using this link: <a href="https://www.dropbox.com/sh/8qbku2qxk85f31x/AABfbUPHavzU_A4215AxAVqHa?dl=0" class="uri">https://www.dropbox.com/sh/8qbku2qxk85f31x/AABfbUPHavzU_A4215AxAVqHa?dl=0</a></p></li>
+<li><p>Data is available in this repository in the ./data directory if git LFS is installed on your machine. (The &lt; git lfs pull &gt; command should allow you to access the files housed in the data folder)</p></li>
+<li><p>Otherwise, the data can also be accessed on Dropbox using this link: <a href="https://www.dropbox.com/sh/8qbku2qxk85f31x/AABfbUPHavzU_A4215AxAVqHa?dl=0" class="uri">https://www.dropbox.com/sh/8qbku2qxk85f31x/AABfbUPHavzU_A4215AxAVqHa?dl=0</a> You will need to copy the data folder into the directory for this repository to run the Shiny app and execute the RMD files.</p></li>
 </ul>
 <p>Raw data files include:</p>
 <ul>
@@ -399,13 +406,17 @@ summary {
 <li>500_Cities__City.csv</li>
 <li>CHDB_data_city_allv10_1.csv</li>
 <li>CHDB_data_tract_allv10.1.csv</li>
-<li>2010 Census Tracts/2010 Census Tracts/geo_export_afcfe2e2-6376-4d66-b290-605e0ac77ee5.shp</li>
 </ul>
 <p>Cleaned data files include:</p>
 <ul>
 <li>city_total_data.xlsx</li>
 <li>census_tract_total_data.csv</li>
 <li>mammography_facilities_nyc_latlong.csv</li>
+</ul>
+<p>GIS files for mapping visuals include:</p>
+<ul>
+<li>2010 Census Tracts/2010 Census Tracts/geo_export_afcfe2e2-6376-4d66-b290-605e0ac77ee5.shp</li>
+<li>cb_2018_36_tract_500k/cb_2018_36_tract_500k.shp</li>
 </ul>
 </div>
 </div>
