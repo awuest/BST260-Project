@@ -2,7 +2,16 @@
 
 #### Authors: Anna Wuest, Colleen McGarth, Dougie Zubizarreta, Rowana Ahmed
 
-Project Website: <>
+
+We are motivated by the well-documented racial/ethnic and socioeconomic disparities in breast cancer screening, treatment, and outcomes. 
+
+The goals of our project are the following: 
+
+* At the city level for all 500 cities featured in the 500 Cities Project, we are interested in providing an overview of mammography use and breast cancer mortality rates as well as  facilities offering mammography services.
+
+* At the census tract level within the city of New York City, we are interested in examining potential social and structural determinants of mammography use by examining the relationship between factors such as obesity, diabetes, insurance status, income inequality, racial/ethnic diversity, % high school completion and so on, and  rates of mammography use. 
+
+Additional info can be found on our [website](https://sites.google.com/d/1B4oTazeljjY-giTvxYUiEdA9Bd3nTbcN/p/18x8x3HGFiv9y42MlFVAVN55WpPlc0jrm/edit) or by viewing our [screencast]().
 
 ### 1. Key Files in Repository
 

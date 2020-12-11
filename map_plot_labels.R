@@ -1,3 +1,5 @@
+# config file for custom figure and table labels in Shiny app
+
 map_labels <- function(var){
   
   case_when(
