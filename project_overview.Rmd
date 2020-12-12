@@ -1,0 +1,175 @@
+---
+title: "U.S. Trends in Breast Cancer Screening & Mortality"
+author: Anna Wuest, Colleen McGrath, Dougie Zubizarreta, Rowana Ahmed
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Overview and Motivation
+
+We are motivated by the well-documented racial/ethnic and socioeconomic disparities in breast cancer screening, treatment, and outcomes. We are interested in identifying specific subgroups and geographic areas that may experience barriers to breast cancer screening and disparities in breast cancer mortality. 
+
+The goals of our project are the following: 
+
+* At the city level for all 500 cities featured in the 500 Cities Project, we are interested in conducting an in-depth exploration of mammography use and breast cancer mortality rates, as well as examining the accessibility of facilities offering mammography services.
+* At the national and census tract level (within the city of New York), we are interested in examining potential social and structural determinants of mammography use by examining its relationship with factors such as obesity, diabetes, insurance status, income inequality, racial/ethnic diversity, % high school completion and so on. 
+
+
+## Background
+
+Breast cancer is the second most common cancer among women and the second leading cause of cancer death among women in the United States.[1] In 2019, an estimated 268,600 individuals were newly diagnosed with invasive breast cancer.[1] There are currently an estimated 3.8 million breast cancer survivors in the United States,[1] and this number is expected to grow to 4.9 million in the next 10 years given steady or increasing incidence and decreasing mortality.[2] Overall, the 5-year breast cancer survival rate is 90%, and recent advances in detection and improvements in treatment suggest that many may exceed 5-year survival estimates. That being said, these advancements disproportionately benefit White women compared to women of color.[1]
+
+Despite decades of research and interventions, significant racial and socioeconomic disparities in breast cancer mortality persist. While breast cancer incidence rates are higher among White women, breast cancer death rates are 37% higher among Black women compared to White women across the United States.[3] A study by Williams & Thompson (2017) found that the odds of late-stage breast cancer were significantly higher among African-American women compared to White women; in addition, the odds of late-stage breast cancer were higher among women residing in high-poverty areas compared to those living in low-poverty areas.[4] Among women of color, those who are low-income have lower rates of breast cancer screening and higher rates of late-stage diagnosis,[4, 5, 6] and are less likely to have health insurance or adequate health insurance coverage.[7, 8, 9] Furthermore, women living in low-income neighborhoods face barriers to accessing breast cancer screening and treatment services, including distance from healthcare facilities and lack of transportation [10, 11, 12] as well as limited financial resources.[13] In addition, low income women of color also have a higher prevalence of comorbidities (diabetes, hypertension, obesity)[14] and are also more likely to have experienced previous discrimination in healthcare settings that may influence medical distrust and delay/avoidance of care.[15] 
+
+## Initial Questions
+
+This exploratory study aims to examine the following questions:
+
+* **What is the relationship between mammography use and breast cancer mortality?**
+
+    - Does access to mammography reduce breast cancer mortality? 
+
+    - How do mammography use and breast cancer mortality vary across geographic areas?
+
+* **What are the social and structural determinants of mammography use?**
+
+    - Are certain subgroups of the population more likely to use breast cancer screening services? More likely to die from breast cancer?
+
+    - How does access to resources impact these relationships?
+
+
+## Data
+
+_For additional details & related code, refer to the [data_cleanup file](data_cleanup.html)_
+
+We are using data from four sources, specifically the [500 Cities Project](https://www.cdc.gov/500cities/index.htm), the [City Health Dashboard](https://www.cityhealthdashboard.com/), the [FDA Certified Mammography Facilities](https://www.fda.gov/radiation-emitting-products/consumer-information-mqsa/search-certified-facility), and [NYC Open Data](https://data.cityofnewyork.us/City-Government/2010-Census-Tracts/fxpq-c8ku), and conducting analysis on two geographical scales: U.S. cities & lower level census tracts. 
+
+**500 Cities Project**: The 500 Cities Project is a product of the CDC and the RWJ Foundation, and it reports city- and census tract-level data for various chronic disease measures and preventive screening services for 500 cities in the United States. We gathered crude and age-adjusted data on mammography use from this source, as well as data on additional screening rates in the adult female population (e.g. pap smear rates and core older adult women preventive measures). The publicly available city-level data file was formatted as needed and was usable after subsetting the columns to the screening rates of interest and recoding the column names for ease of use. The geolocation provided for each city was processed and spatially-transformed to allow for layering onto the US map for data visualization and interactivity in the application.
+
+The census tract level data required additional processing, and the records were filtered to only include the crude prevalence since a prohibitive number of age adjusted screening rate records were missing. The source data was further manipulated to convert to “wide” format for ease of use.
+
+**City Health Dashboard**: This database was utilized to acquire the number of breast cancer deaths in each city, as well as other socioeconomic and environmental determinants of health. The City Health Dashboard obtains information on breast cancer deaths from the National Vital Statistics System of the National Center for Health Statistics, and the dashboard aggregates other health metrics from various data sources such as the American Community Survey. 
+
+The city and census tract level data were filtered to the relevant environmental, socioeconomic, and individual health factors and limited to measures from 2015-2017 for temporal consistency with the 500 Cities data source, which used 2016 BRFSS data. Note, not all factors available at the city level were present at the tract level; one of the key metrics missing at the more granular census tract level is breast cancer mortality rates, and so mammography usage was used as the primary outcome for analysis at this lower geographical level. 
+
+
+**FDA Certified Mammography Facilities**: The facilities data was used for analysis on two geographical scales (1) across all U.S. cities and (2) focused analysis on New York City census tracts. For the higher level analysis, the “city” and “state” labels across individual facilities were converted to title and upper case, respectively, for consistency across records. The data was then aggregated to count the number of facilities present in each of the cities. 
+
+The original data was then subsetted to include only observations in New York City, New York. 
+_(Please refer to [NYC_facilities files](NYC_facilities.html) for detailed code)._ After subsetting the data, certain observations needed to be re-coded due to spelling errors and differences in capitalization. Additionally, the column called “city” needed to be recoded to “borough” and observations needed to be recoded according to which borough they fell within (i.e., Manhattan, Brooklyn, Queens, the Bronx, Staten Island). This .csv file was then exported to Excel and each address was manually geocoded using Google Maps to retrieve the latitude and longitude coordinates for each site to allow for coordinate mapping. 
+
+
+**Data Aggregation**:  The three data sources (screening rates from 500 Cities Project, socioeconomic and health factors from the City Health Dashboard, and facilities counts from the FDA database) were then combined for each of the two geographical levels (all U.S. cities and census tracts). At the city level, the three data sources were merged on the state and city labels resulting in a dataset with records for 500 cities. At the census tract level, the screening rates and health factors data were merged using the FIPs identifier resulting in 28K records. The New York City census tract records were further joined with the geocoded facilities data for additional analysis.
+
+## Exploratory Analysis
+
+We examined summary statistics, histograms, and boxplots for each variable at the city-level (for all 500 cities) and at the census-tract level (for all census-tracts in New York City). Details can be found in the related html files used for analysis.  
+
+### Shiny App Plots
+This project features an R Shiny application for users to explore trends in breast cancer screening and mortality in a variety of ways, including by user-selected demographic or individual health characteristics, from a national perspective with the option to highlight specific cities, and by a deeper dive into New York City. Descriptions of the features encased in each section of the application are provided below as well. 
+
+**Shiny App - Tab 1:**
+In the first tab of the Shiny application, users may explore possible relationships between breast cancer-related metrics and other variables of interest, such as demographics or individual health characteristics. Users are prompted to select a breast cancer variable of interest: mammography use or breast cancer mortality. Then, the user may select a second variable from a drop-down menu of demographic and individual health characteristics, such as racial/ethnic diversity, high school completion in the population, obesity prevalence, and so on. The application will output a scatterplot that allows the user to easily visualize any trends between the two variables selected. As an added feature, the user may select any datapoint and receive information about that datapoint, including which city it represents and the point estimates for the selected variable, in a table above the plot.
+
+Also in the first tab of the Shiny application, users may observe trends between racial/ethnic groups for a selection of demographic and individual-health characteristics. Two options are available to visualize the data by race/ethnicity. In the first section, users may select one variable and the application will output a violin plot of the data stratified by racial/ethnic group. In the second section, users may select a variable, and the application will produce a scatterplot of this variable correlated with breast cancer mortality, stratified by racial/ethnic group. These features allow users to clearly visualize trends in demographic and individual health characteristics between racial/ethnic groups, interpret how these trends may impact breast cancer mortality, and consider how these trends may impact breast cancer care overall.
+
+**Shiny App - Tab 2:**
+In the second tab of the Shiny application, users are able to visualize the trends in breast cancer screening and mortality in each of the 500 cities by the number of facilities offering mammography services in those cities and gain a national perspective of these relationships. This tab features an output plot of the United States with points for each of the 500 cities in the 500 Cities Project. The size of the point for each city is indicative of the number of facilities offering mammography services in that city per 100,000 persons, with the larger points indicating a larger quantity of facilities in that city per 100,000 persons. Users may select either of the breast cancer variables provided (mammography use or mortality), and the points will be color-coded based on a continuous scale of the selected variable. This allows users to easily visualize the relationship between the number of facilities offering mammographic services and a breast cancer outcome variable of interest. In addition, users can visualize any spatial trends across the nation. As a second option, users are able to select ~10 cities to make similar comparisons as those made at the larger national perspective above but at a smaller, more easily visualizable scale, and the users will be provided with a table of the values of the breast cancer variables for the cities they selected.
+
+**Shiny App - Tab 3:** 
+In the third tab of the Shiny application, users are able to select a variable of interest (e.g., mammography use, racial/ethnic diversity) to produce a heat map displaying the distribution of the user-selected variable across New York City census tracts.
+
+## Statistical methods 
+
+### Mammography Usage & Breast Cancer Mortality across U.S. Cities
+
+_For detailed analysis, please refer to the [city_level_analysis files](city_level_analysis.html)_
+
+A multiple linear regression model was used to understand the relationship between socioeconomic factors and screening rates with breast cancer mortality rates across 500 U.S. cities. The primary covariate of interest was age-adjusted mammography usage in the adult female population aged 50-74 years, which was plotted against the outcome of breast cancer mortality, and a loess smooth indicates an inverse relationship. 
+
+Other potentially relevant health outcomes, socioeconomic measures, and environmental factors were assessed for multicollinearity and possible associations with the outcome of interest. Several models were considered to account for confounding and effect modification, and the final model ($R^{2}_\text{Adjusted} = 0.112$ ) with statistically significant predictors include percent mammography usage in population, linear and quadratic terms for race & ethnic diversity index score, neighborhood segregation index score, and an indicator variable signifying whether the city unemployment level exceeds national median value of 5.9%. 
+
+Model diagnostics indicated the normality and homoscedasticity assumptions of the residuals in the final model were violated, and so the robust sandwich estimator method was employed to calculate the standard errors of the coefficients and the associated confidence intervals.
+
+### Mammography Usage: A Deeper Dive into NYC
+
+_For detailed analysis, please refer to the [nyc_level_analysis files] ()_
+
+To assess the trends of mammography use in New York City, New York, we used a multi-step approach. Beginning with individual parameter assessment, each parameter was evaluated to determine if it fit the following assumptions: linearity, independence, normality, and homoscedasticity (L.I.N.E. assumptions). However, these were somewhat relaxed because our end goal was to utilize these parameters in decision trees and random forests, which are not parametric, and thus the previously listed assumptions do not need to be satisfied. 
+
+The parameters of interest fell into these main categories five main categories: health outcomes, (e.g. diabetes, or mental and physical distress), socio-economic factors (e.g. graduation rate, racial/ethinic diversity), health behavior (e.g. smoking, binge drinking), physical environment (e.g. air pollution) and clinical care (e.g. health insurance). After assessment of how the variables satisfy the L.I.N.E. assumptions, we tested for interaction, confounding, and relevancy of quadratic terms. To determine if the quadratic terms improved the model from the simply linear model, an analysis of variance (ANOVA) test was used to compare the models. Finally, we took relevant variables and terms and input them all into a forward selection model, which generated the model that fit the data the best. 
+
+We then used the resulting covariates to generate decision trees and random forests, using the significant parameters from the multiple linear regression and forward selection as guidance. Additionally, we implemented a bag decision tree and a bag random forest. Of these two types, the random forests were significantly more predictive according to our MSE, and of the random forests, the bag model has a lower MSE. In addition to general predictive value, we utilized importance factors to determine the covariates that were the best predictors within the random forest.
+
+## Results
+
+### Mammography Usage & Breast Cancer Mortality across U.S. Cities
+
+$$
+\begin{split}
+& E(\text{Number of breast cancer deaths/100,000 females}) = 23.9 \\
+& -0.18*\text{(% mammography use)} + \\
+& 0.38*\text{(racial & ethnic diversity)} - \\
+& 0.003*\text{(racial & ethnic diversity)}^2 + \\
+& 0.09*\text{(neighborhood segregation)} + \\
+& 2.93*\text{I(high unemployment)} 
+\end{split}
+$$ 
+
+The aggregated city level dataset was used to fit a multiple linear regression model to better understand the association between breast cancer mortality and screening rates, as well as socioeconomic factors, across 500 U.S. cities. The fitted model ($R^{2}_\text{Adjusted} = 0.112$ ) shows an inverse relationship between mammography usage and breast cancer mortality. Based on this model, a 10% increase in mammography usage in a city would reduce breast cancer mortality on average by 1.8 deaths per 100,000 females (95% CI: .34 - 3.2), adjusting for socioeconomic factors.
+
+It is also interesting to note that cities with racial segregation in neighborhoods and higher levels of minority groups have higher rates of breast cancer deaths. The City Health Dashboard quantifies racial segregation using an index that measures how evenly distributed racial/ethnic groups are across a city’s census tracks, where 0 represents a perfectly even distribution and 100 represents complete segregation. Based on this model, an increase in a city’s segregation score by 10 units on this index corresponds to an increase in the rate of breast cancer mortality on average by 0.9 deaths per 100,000 females (95% CI: 0.18 - 1.7), adjusting for all other factors.
+
+Additionally, the City Health Dashboard measures the diversity of a city by quantifying the composition of racial/ethnic groups in the area. For this index, a 0 corresponds to a city where all residents belong to the same group and a 100 corresponds to a proportionate representation of each group in the area (this index does not account for the geographical distribution of groups within the city; that is captured by the segregation index). From the multiple linear regression model, we can conclude that a city where the diversity index is 10 units higher (i.e. more representation of different races/ethnicities) has on average 3.5 more breast cancer deaths per 100,000 females (95% CI: 1.48-5.56) than a city with a lower diversity index.
+
+This further highlights the disproportionate effect breast cancer mortality has on communities of color across US cities.
+
+#### Mammography Usage: A Deeper Dive into New York City
+
+After determining relevant covariates, the final linear regression model was fit using forward selection. The forward selected model resulted in an adjusted R-squared value of 0.866 and a mean squared error (MSE) of 1.915. 
+
+After determining the most predictive covariates according to the forward selection model, the next step was to utilize machine learning algorithms to improve the predictive power of the model. To begin, we used the selected variables from the forward model, as well as a bag model for a decision tree. The two resulting decision trees were the same, indicating that the forward selection process yielded similar results to the decision tree. To assess these models, we used the MSE for the training data set to determine each model’s ability to predict accurate values for new data. The MSE for these decision trees is 2.365. After analyzing the nodes for the decision trees, the lowest deviance corresponded with the highest node (nine nodes), indicating that a pruned tree was not necessary. For the interest of the project, a pruned tree was tried with eight nodes (one fewer than the optimal maximum). Likewise, the MSE for this tree is greater than for the non-pruned tree, and equals 2.417. So, the lowest MSE continues to be the forward selected model. 
+
+Finally, random forests were fit, with one using the variables from the forward selected model, and the other one as a bag model. For the random forest using only the forward selected variables, the MSE is 0.965, and for the bag model the MSE is 0.784. Both models outperform the multivariable linear model, with the bag model having the overall lowest (best) MSE. The results of these models indicate that random forests outperform decision trees and multiple linear regression with regard to prediction accuracy. However, it is important to note that the predictive power of the random forest comes at the expense of interpretability. So, while the MSE of the random forest is the lowest, one may still prefer the multivariable linear regression due to its relative simplicity. In our case, we will move forward with the bag random forest because we favor a predictive model over an interpretable model.
+
+Notably, different variables are significant for the random forest and the multivariable linear regression models, suggesting that the perceived importance of different demographics shift depending on the model used. In this case, because we favor parameter identification and accuracy, we will use the most accurate model - the bag random forest. 
+
+The bag random forest model listed 15 covariates that are most significant when making a prediction, they are in order as follows: prevalence of pap tests, obesity percentage, binge drinking, graduation rate, air pollution, diabetes prevalence, physical distress, racial/ethnic diversity, general wellness (women >= 65 years), smoking prevalence, income inequality, unemployment rate, mental distress, potential lead risk exposure, and uninsurance rate. We can then cross-reference these covariates with the simple linear regression models that were written for each earlier in the code. 
+
+
+## Conclusion
+
+### National Trends
+
+The national trends of racial inequities observed in this exploratory analysis expand upon prior research performed on smaller geographical scales. Kreiger et al. (2020) found in a recent study that historical redlining from the 1930s has led to present day disparities in breast and lung cancer diagnoses across 28 Massachusetts municipalities, even for individuals who personally benefit from present-day economic and racial privilege.[1] Additionally, in areas where the Home Owners’ Loan Corporation (HOLC) drew boundaries, notable differences in homeownership, credit scores, and segregation persist.[2] Segregated communities often have imbalanced resource allocation, with many communities of color lacking access to health care services, public transportation, and other social determinants known to positively impact health (e.g. public green spaces). Our analysis shows that social forces strongly influence health outcomes, with certain groups more vulnerable than others. Even in areas with relatively large numbers of mammography facilities, some of the highest rates of death are observed if the area is also segregated, with Blacks being disproportionately affected. Historical redlining and present-day segregation, predatory lending, and racism undoubtedly perpetuate health inequities across U.S. cities.[1, 3, 4, 5] 
+
+
+### NYC: A Deeper Dive
+
+The goal for New York City’s deep dive was to build a model to predict who is not getting mammograms, and to specifically identify the covariates (and corresponding subgroups) who are least likely to receive critical screenings. Subsequently, these subgroups are at higher risk of late stage diagnosis of breast cancer, and thus breast cancer mortality. 
+
+Numerous covariates were found to be important when determining the prevalence of mammograms in census tract areas. Models such as this may be used to estimate mammogram use in New York City neighborhoods to determine which are most in need of increased breast cancer screenings. Specifically, this can be used to inform public health policy surrounding demographic inequities behind mammogram use. 
+
+Our findings from the national and focused New York City analysis will help inform the development of policies and interventions that can reduce racial/ethnic and socioeconomic disparities in mammography use and breast cancer mortality by drawing attention to specific geographic areas that should be targeted for resource allocation. 
+
+
+## References
+
+1. American Cancer Society. Cancer Treatment & Survivorship Facts and Figures 2019-2021. American Cancer Society; 2019.
+1. Smith BD, Smith GL, Hurria A, Hortobagyi GN, Buchholz TA. Future of Cancer Incidence in the United States: Burdens Upon an Aging, Changing Nation. JCO. 2009 Jun 10;27(17):2758-65.
+1. Smigal C, Jemal A, Ward E, Cokkinides V, Smith R, Howe HL, Thun M. Trends in Breast Cancer by Race and Ethnicity: Update 2006. CA Cancer J Clin. 2006;56(3):168-83.
+1. Williams F & Thompson E. Disparities in Breast Cancer Stage at Diagnosis: Importance of Race, Poverty, and Age. J Health Dispar Res Pract. 2017;10(3):34-45.
+1. Schootman M, Jeffe DB, Lian M, Gillanders WE, Aft R. The Role of Poverty Rate and Racial Distribution in the Geographic Clustering of Breast Cancer Survival Among Older Women: A Geographic and Multilevel Analysis. Am J Epidemiol. 2009;169(5):554-61. 
+1. MacKinnon JA, Duncan RC, Huang Y, Lee DJ, Fleming LE, Voti L, Rudolph M, Wilkinson JD. Detecting an Association between Socioeconomic Status and Late Stage Breast Cancer Using Spatial Analysis and Area-Based Measures. Cancer Epidemiol Biomarkers Prev. 2007;16(4):756-62.
+1. Byrne SK, Mary ES, DeShields T. Factors Associated with why African-American Women from One Urban County Use Mammography Services Less. J Natl Black Nurses Assoc. 2011;22(1):8-14.
+1. Ward E, Halpern M, Schrag N, Cokkinides V, DeSantis C, Bandi P, Siegel R, Stewart A, Jemal A. Association of Insurance with Cancer Care Utilization and Outcomes. CA Cancer J Clin. 2008;58(1):9-31.
+1. Ko NY, Hong S, Winn RA, Calip GS. Association of Insurance Status and Racial Disparities with the Detection of Early-Stage Breast Cancer. JAMA Oncol. 2020;6(3):385-392.
+1. Alexandraki I & Mooradian AD. Barriers Related to Mammography Use for Breast Cancer Screening among Minority Women. J Natl Med Assoc. 2010;102(3):206-18.
+1. Mishra SI, DeForge B, Barnet B, Ntiri S, Grant L. Social Determinants of Breast Cancer Screening in Urban Primary Care Practices: A Community-Engaged Formative Study. Womens Health Issues. 2012;22(5):e429-38.
+1. Barry J & Breen N. The Importance of Place of Residence in Predicting Late-Stage Diagnosis of Breast or Cervical Cancer. Health & Place. 2005;11(1):15-29.
+1. Fernandez ME, Palmer RC, Leong-Wu CA. Repeat Mammography Screening among Low-Income and Minority Women: A Qualitative Study. Cancer Control. 2005;12 Suppl 2:77-83.
+1. Tammemagi CM, Nerenz D, Neslund-Dudas C, Feldkamp C, Nathanson D. Comorbidity and Survival Disparities among Black and White Patients with Breast Cancer. JAMA. 2005;294(14):1765-72.
+1. Burgess DJ, Ding Y, Hargreaves M, van Ryn M, Phelan S. The Association between Perceived Discrimination and Underutilization of Needed Medical and Mental Health Care in a Multi-Ethnic Community Sample. J Health Care Poor Underserved. 2008;19(3):894-911.

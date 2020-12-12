@@ -1,6 +1,5 @@
 ---
-title: "facilities_latlong_nyc"
-author: "Dougie Zubizarreta"
+title: "NYC Facilities"
 date: "11/27/2020"
 output: html_document
 ---
@@ -13,7 +12,7 @@ library(sf)
 ```
 
 # Read in the mammography facilities .csv file containing all facilities in the US
-```{r}
+```{r, echo = FALSE}
 mammography_facilities <- read_csv("data/mammography_facilities.csv")
 ```
 
@@ -85,13 +84,13 @@ write.csv(mammography_facilities_nyc,"data/mammography_facilities_nyc.csv", row.
 
 # Import the updated .csv file containing the latitude and longitude coordinates.
 ```{r}
-mammography_facilities_nyc_latlong <- read_csv("mammography_facilities_nyc_latlong.csv")
+mammography_facilities_nyc_latlong <- read_csv("data/mammography_facilities_nyc_latlong.csv")
 ```
 
 # Read in the 2010 NYC census tracts shape file from NYC OpenData 
 [Visit NYC OpenData!](https://data.cityofnewyork.us/City-Government/2010-Census-Tracts/fxpq-c8ku).
 ```{r}
-census_tracts <- st_read("data/geo_export_afcfe2e2-6376-4d66-b290-605e0ac77ee5.shp", quiet = TRUE)
+census_tracts <- st_read("data/2010 Census Tracts/geo_export_afcfe2e2-6376-4d66-b290-605e0ac77ee5.shp", quiet = TRUE)
 ```
 
 # Create a plot of facilities with mammography services in New York City

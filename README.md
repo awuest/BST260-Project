@@ -1,15 +1,18 @@
-# BST260 Final Project: Trends in Breast Cancer Screening & Mortality
+# U.S. Trends in Breast Cancer Screening & Mortality
 
+#### BST260 Final Project 
 #### Authors: Anna Wuest, Colleen McGrath, Dougie Zubizarreta, Rowana Ahmed
 
 
-We are motivated by the well-documented racial/ethnic and socioeconomic disparities in breast cancer screening, treatment, and outcomes. 
+We are motivated by the well-documented racial/ethnic and socioeconomic disparities in breast cancer screening, treatment, and outcomes. We are interested in identifying specific subgroups and geographic areas that may experience barriers to breast cancer screening and disparities in breast cancer mortality. 
+
+
 
 The goals of our project are the following: 
 
-* At the city level for all 500 cities featured in the 500 Cities Project, we are interested in providing an overview of mammography use and breast cancer mortality rates as well as  facilities offering mammography services.
+* At the city level for all 500 cities featured in the 500 Cities Project, we are interested in conducting an in-depth exploration of mammography use and breast cancer mortality rates as well as facilities offering mammography services.
 
-* At the census tract level within the city of New York City, we are interested in examining potential social and structural determinants of mammography use by examining the relationship between factors such as obesity, diabetes, insurance status, income inequality, racial/ethnic diversity, % high school completion and so on, and  rates of mammography use. 
+* At the national and census tract level (within the city of New York), we are interested in examining potential social and structural determinants of mammography use by examining its relationship with factors such as obesity, diabetes, insurance status, income inequality, racial/ethnic diversity, % high school completion and so on. 
 
 Additional info can be found on our [website](https://sites.google.com/view/bst260project-group1/home) or by viewing our [screencast](https://www.youtube.com/watch?v=vy-moLAHpOY&feature=emb_logo).
 
@@ -23,6 +26,7 @@ Supplemental Files (html/.Rmd):
 
 * data_cleanup [primary location for data wrangling/aggregation]
 * city_level_analysis [national level analysis across all U.S. cities]
+* nyc_level_analysis [NYC focused analysis at census tract level]
 * NYC_facilities [mapping visualization code for NYC facilities]
 
 ### 2. RShiny app
