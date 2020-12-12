@@ -96,7 +96,7 @@ Model diagnostics indicated the normality and homoscedasticity assumptions of th
 
 ### Mammography Usage: A Deeper Dive into NYC
 
-_For detailed analysis, please refer to the [nyc_level_analysis files] ()_
+_For detailed analysis, please refer to the [nyc_level_analysis files](Regression_Analysis.html)_
 
 To assess the trends of mammography use in New York City, New York, we used a multi-step approach. Beginning with individual parameter assessment, each parameter was evaluated to determine if it fit the following assumptions: linearity, independence, normality, and homoscedasticity (L.I.N.E. assumptions). However, these were somewhat relaxed because our end goal was to utilize these parameters in decision trees and random forests, which are not parametric, and thus the previously listed assumptions do not need to be satisfied. 
 
