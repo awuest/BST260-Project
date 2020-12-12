@@ -1,7 +1,5 @@
 ---
 title: "Data Wrangling"
-author: "Rowana Ahmed"
-date: "11/15/2020"
 output: html_document
 ---
 
@@ -9,7 +7,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
+```{r, include=FALSE}
 library(tidyverse)
 library(stringr)
 library(xlsx)
@@ -17,14 +15,21 @@ library(xlsx)
 
 ## Read in Data
 
-```{r,  warning = FALSE}
+1. [Facilities Data](https://www.fda.gov/radiation-emitting-products/consumer-information-mqsa/search-certified-facility
+)  
+
+2. 500 Cities Data: ([city level](https://chronicdata.cdc.gov/500-Cities-Places/500-Cities-City-level-Data-GIS-Friendly-Format-201/dxpw-cm5u), [tract level](https://chronicdata.cdc.gov/500-Cities-Places/500-Cities-Local-Data-for-Better-Health-2019-relea/6vp6-wxuq))
+
+3. [City Health Dashboard data](https://www.cityhealthdashboard.com/data-access) (both city & tract)
+
+```{r,  warning = FALSE, message = FALSE}
 facilities = read_csv('data/mammography_facilities.csv')
 screen_rate = read_csv('data/500_Cities__City.csv')
 chdb_metrics = read_csv('data/CHDB_data_city_allv10_1.csv')
 ```
 
 
-## High Level: National Facilities Mapping
+## High Level: U.S. Cities
 
 objective: merge following data sources -  
 
@@ -34,7 +39,7 @@ objective: merge following data sources -
 
 * breast cancer deaths
 
-Step 1: subset 500 cities data to relevant screening metrics -> **screen_data** df
+### Step 1: subset 500 cities data to relevant screening metrics -> **screen_data** df
 ```{r}
 names(screen_rate)
 
@@ -49,7 +54,8 @@ screen_metrics <- c('StateAbbr', 'PlaceName', 'Population2010',
                    'MAMMOUSE_CrudePrev', 'MAMMOUSE_Crude95CI', 
                    'MAMMOUSE_AdjPrev', 'MAMMOUSE_Adj95CI',
                    'PAPTEST_CrudePrev', 'PAPTEST_Crude95CI', 
-                   'PAPTEST_AdjPrev', 'PAPTEST_Adj95CI')
+                   'PAPTEST_AdjPrev', 'PAPTEST_Adj95CI',
+                   'Geolocation')
 
 screen_data <-  screen_rate %>%
                 select(screen_metrics) %>% rename(state_abbr = StateAbbr,
@@ -57,9 +63,8 @@ screen_data <-  screen_rate %>%
 
 ```
 
-Step 2: subset city health dashboard metrics to target variables -> **factors_data** df
+### Step 2: subset city health dashboard metrics to target variables -> **factors_data** df
 ```{r}
-names(chdb_metrics)
 unique(chdb_metrics$metric_name)
 
 # Relevant measures
@@ -76,6 +81,7 @@ unique(chdb_metrics$metric_name)
 # "Walkability" - 27
 # "Uninsured"  - 25
 # "Unemployment - annual, neighborhood-level" - 24
+# "Racial/ethnic segregation" - 16
 # "Racial/ethnic diversity"  - 21
 # 
 # ## individual health
@@ -90,7 +96,7 @@ unique(chdb_metrics$metric_name)
 # "Obesity" - 17
 
 indiv_health <- list(3, 6, 7, 8, 34, 35, 28, 22, 17)
-socioecon <- list(10, 13, 15, 33, 27, 25, 24, 21)
+socioecon <- list(10, 13, 15, 33, 27, 25, 24, 16, 21)
 env <- list(2,12)
 
 all_measures = append(append(indiv_health, socioecon), env)
@@ -108,7 +114,7 @@ factors_data <- factors_data %>% mutate(metric_name = paste(metric_name, group_n
 ```
 
 
-Step 3: aggregate facilities count per city -> **site_counts** df
+### Step 3: aggregate facilities count per city -> **site_counts** df
 ```{r}
 facilities <- facilities %>% mutate(state = str_to_upper(state)) %>% 
                              mutate(city = str_to_title(city))
@@ -120,7 +126,7 @@ head(site_counts)
 
 ```
 
-Step 4: Merge higher level data into single df
+### Step 4: Merge higher level data into single df
 ```{r}
 wide_factors <- factors_data %>% pivot_wider(id_cols = c(state_abbr, city_name),
                                              names_from = metric_name,
@@ -135,7 +141,7 @@ city_total_data <- left_join(temp, site_counts, by=c('state_abbr', 'city_name'))
 
 # column cleanup
 names(city_total_data) <- names(city_total_data) %>% str_to_lower() %>%  str_replace_all(' ', '_')%>% 
-                           str_replace_all(c("_-_|,_"), '_')
+                           str_replace_all(c("_-_|,_|/|-"), '_')
 
 
 write.xlsx(city_total_data, 'data/city_total_data.xlsx')
@@ -143,27 +149,25 @@ write.xlsx(city_total_data, 'data/city_total_data.xlsx')
 ```
 
 
-```{r}
+```{r, include = FALSE}
 head(city_total_data)
 
 
 ```
 
-## Lower Level Geography Focused Data
+## Lower Level: Census Tract level data
 
-Census Tract level data
-
-```{r}
+```{r, warning = FALSE, message = FALSE}
 
 screen_rate_tract = read_csv('data/500_Cities__censustract.csv')
 chdb_metrics_tract = read_csv('data/CHDB_data_tract_allv10_1.csv')
 
 ```
 
-1. Subset 500 cities data at census tract level to relevant screening metrics
+### 1. Subset 500 cities data at census tract level to relevant screening metrics
 ```{r}
 
-names(screen_rate_tract)
+# names(screen_rate_tract)
 
 unique(screen_rate_tract$MeasureId)
 screen_metrics_t <- c("MAMMOUSE", "PAPTEST", "COREW")
@@ -201,7 +205,7 @@ names(screen_data_tract) <- c('state_abbr', 'city_name', 'city_fips', 'tract_fip
 ```
 
 
-Step 2. Measures data from CHDB
+### Step 2. Measures data from CHDB
 ```{r}
 head(chdb_metrics_tract)
 
@@ -220,14 +224,15 @@ wide_factors_tract <- factors_data_tract %>% pivot_wider(id_cols = c(state_abbr,
                                              values_from = est) %>% 
                       rename(tract_fips = stcotr_fips)
 ```
-Step 3. Combine factors & screen rates data
+
+### Step 3. Combine factors & screen rates data
 ```{r}
 tract_tot <- left_join(screen_data_tract, wide_factors_tract, by = c('state_abbr', 
                                                         'city_name', 'tract_fips'))
 
 # column cleanup
 names(tract_tot) <- names(tract_tot) %>% str_to_lower() %>%  str_replace_all(' ', '_')%>% 
-                           str_replace_all(c("_-_|,_"), '_')
+                           str_replace_all(c("_-_|,_|/|-"), '_')
 
 
 

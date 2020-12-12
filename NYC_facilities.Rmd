@@ -1,0 +1,105 @@
+---
+title: "NYC Facilities"
+date: "11/27/2020"
+output: html_document
+---
+
+# Load packages
+```{r}
+library(tidyverse)
+library(mapproj)
+library(sf)
+```
+
+# Read in the mammography facilities .csv file containing all facilities in the US
+```{r, echo = FALSE}
+mammography_facilities <- read_csv("data/mammography_facilities.csv")
+```
+
+# Filter to create a new dataframe with only facilities in New York state
+```{r}
+table(mammography_facilities$state)
+
+mammography_facilities_ny <- mammography_facilities %>%
+  filter(state == "NY")
+mammography_facilities_ny
+
+table(mammography_facilities_ny$state)
+```
+
+# Filter to create a new dataframe with only facilities in New York city
+```{r}
+table(mammography_facilities_ny$city)
+
+mammography_facilities_nyc <- mammography_facilities_ny %>%
+  filter(city %in% c("Staten Isalnd","Staten Island","brooklyn","Brooklyn", "BROOKLYN", "Bronx","Jamaica","Jackson Heights","Richmond Hill","Rego Park","Ozone Park","NEW YORK","New York","Long Island City","Laurelton","Kew Gardens","Howard Beach","Glendale","Forest Hills","Flushing","Far Rockaway","Elmhurst","Cambria Heights","Bayside","Astoria"))
+mammography_facilities_nyc
+
+table(mammography_facilities_nyc$city)
+```
+
+# Rename some of the values to make sure the spelling is correct
+```{r}
+mammography_facilities_nyc = mammography_facilities_nyc %>%
+  mutate(city = recode(city, 
+                          `brooklyn`="Brooklyn",
+                          `BROOKLYN` = "Brooklyn",
+                          `NEW YORK` = "New York",
+                          `Staten Isalnd` = "Staten Island"
+                          ))
+table(mammography_facilities_nyc$city)
+```
+
+# Group the values by borough (i.e., Manhattan, Brooklyn, Queens, the Bronx, Staten Island)
+```{r}
+colnames(mammography_facilities_nyc)[colnames(mammography_facilities_nyc) == "city"] <- "borough"
+
+mammography_facilities_nyc = mammography_facilities_nyc %>%
+  mutate(borough = recode(borough, 
+                          `Astoria`="Queens",
+                          `Bayside` = "Queens",
+                          `Cambria Heights` = "Queens",
+                          `Elmhurst` = "Queens",
+                          `Far Rockaway`="Queens",
+                          `Flushing` = "Queens",
+                          `Forest Hills` = "Queens",
+                          `Glendale` = "Queens",
+                          `Howard Beach`="Queens",
+                          `Jackson Heights` = "Queens",
+                          `Jamaica` = "Queens",
+                          `Kew Gardens` = "Queens",
+                          `Laurelton`="Queens",
+                          `Long Island City` = "Queens",
+                          `Ozone Park` = "Queens",
+                          `Rego Park` = "Queens",
+                          `Richmond Hill` = "Queens",
+                          ))
+table(mammography_facilities_nyc$borough)
+```
+
+# Export to .csv file. Manually enter in latitude and longitude coordinates using Google Maps. Add these latitude and longitude coordinates into new columns in the .csv file. 
+```{r, eval = FALSE}
+write.csv(mammography_facilities_nyc,"data/mammography_facilities_nyc.csv", row.names = FALSE)
+```
+
+# Import the updated .csv file containing the latitude and longitude coordinates.
+```{r}
+mammography_facilities_nyc_latlong <- read_csv("data/mammography_facilities_nyc_latlong.csv")
+```
+
+# Read in the 2010 NYC census tracts shape file from NYC OpenData 
+[Visit NYC OpenData!](https://data.cityofnewyork.us/City-Government/2010-Census-Tracts/fxpq-c8ku).
+```{r}
+census_tracts <- st_read("data/2010 Census Tracts/geo_export_afcfe2e2-6376-4d66-b290-605e0ac77ee5.shp", quiet = TRUE)
+```
+
+# Create a plot of facilities with mammography services in New York City
+```{r}
+p <- census_tracts %>%
+  select(geometry) %>%
+  plot(main = "Facilities Offering Mammography Services in NYC", lwd = 0.25)
+
+coord <- mapproject(mammography_facilities_nyc_latlong$longitude, mammography_facilities_nyc_latlong$latitude, projection = "", parameters = NULL, orientation = NULL)
+
+p + points(coord, pch = 20, cex = 0.5, col = "red")
+```
