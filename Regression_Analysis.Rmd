@@ -105,7 +105,7 @@ ggplot(df_aw, aes(frequent_physical_distress_total_population)) +
 ggplot(df_aw, aes(racial.ethnic_diversity_total_population)) +
   geom_histogram()
 
-ggplot(df_aw, aes(corew_curdeprev)) +
+ggplot(df_aw, aes(corew_crudeprev)) +
   geom_histogram()
 
 ggplot(df_aw, aes(frequent_mental_distress_total_population)) +
@@ -140,7 +140,7 @@ ggplot(df_aw, aes(smoking_total_population)) +
  + frequent_physical_distress_total_population
  + racial.ethnic_diversity_total_population
 * Normal:
- + corew_curdeprev
+ + corew_crudeprev
  + frequent_mental_distress_total_population
  + income_inequality_total_population
  + obesity_total_population
@@ -151,7 +151,7 @@ ggplot(df_aw, aes(smoking_total_population)) +
 ### QQ Plot
 ```{r, results= 'hide', fig.show='hide', warning = FALSE}
 qqnorm(df_aw$mammouse_crudeprev)
-qqnorm(df_aw$corew_curdeprev) 
+qqnorm(df_aw$corew_crudeprev) 
 qqnorm(df_aw$paptest_crudeprev) 
 qqnorm(df_aw$air_pollution_particulate_matter_total_population) 
 qqnorm(df_aw$binge_drinking_total_population) 
@@ -367,11 +367,11 @@ These models show how mental distress may be used to predict mammography use, wi
 ```{r, echo=TRUE, results= 'hide', warning = FALSE}
 
 # overall health 
-onecovar_oh <- lm(mammouse_crudeprev ~ corew_curdeprev, data=df_aw)
+onecovar_oh <- lm(mammouse_crudeprev ~ corew_crudeprev, data=df_aw)
 summary(onecovar_oh)
 
 # overall health squared
-onecovar_oh_sq <- lm(mammouse_crudeprev ~ corew_curdeprev + I(corew_curdeprev^2), data=df_aw)
+onecovar_oh_sq <- lm(mammouse_crudeprev ~ corew_crudeprev + I(corew_crudeprev^2), data=df_aw)
 summary(onecovar_oh_sq)
 
 # anova
@@ -515,7 +515,7 @@ There is a 75.05% percent difference between the coefficient for insurance cover
 ```{r, echo=TRUE, results= 'hide', warning = FALSE}
 # forward model selection
 
-full_mod <-lm(mammouse_crudeprev ~ high_school_completion_total_population + unemployment_annual_neighborhood.level_total_population + high_school_completion_total_population*unemployment_annual_neighborhood.level_total_population + binge_drinking_total_population + smoking_total_population + binge_drinking_total_population*smoking_total_population + frequent_physical_distress_total_population + frequent_mental_distress_total_population + frequent_physical_distress_total_population*frequent_mental_distress_total_population + corew_curdeprev + I(frequent_mental_distress_total_population^2) + I(frequent_physical_distress_total_population^2) + I(high_school_completion_total_population^2) + income_inequality_total_population + I(income_inequality_total_population^2) + obesity_total_population + I(obesity_total_population^2) + smoking_total_population + I(uninsured_total_population^2) + I(unemployment_annual_neighborhood.level_total_population^2) + racial.ethnic_diversity_total_population + I(racial.ethnic_diversity_total_population^2) +  paptest_crudeprev + diabetes_total_population, family = gaussian(), data=df_aw)
+full_mod <-lm(mammouse_crudeprev ~ high_school_completion_total_population + unemployment_annual_neighborhood.level_total_population + high_school_completion_total_population*unemployment_annual_neighborhood.level_total_population + binge_drinking_total_population + smoking_total_population + binge_drinking_total_population*smoking_total_population + frequent_physical_distress_total_population + frequent_mental_distress_total_population + frequent_physical_distress_total_population*frequent_mental_distress_total_population + corew_crudeprev + I(frequent_mental_distress_total_population^2) + I(frequent_physical_distress_total_population^2) + I(high_school_completion_total_population^2) + income_inequality_total_population + I(income_inequality_total_population^2) + obesity_total_population + I(obesity_total_population^2) + smoking_total_population + I(uninsured_total_population^2) + I(unemployment_annual_neighborhood.level_total_population^2) + racial.ethnic_diversity_total_population + I(racial.ethnic_diversity_total_population^2) +  paptest_crudeprev + diabetes_total_population, family = gaussian(), data=df_aw)
 
 mod_forw <- step(full_mod, direction = "forward")
 summary(mod_forw)
@@ -526,7 +526,7 @@ summary(mod_forw)
 Resulting model:
 
 ```{r}
-final_mod <- lm(mammouse_crudeprev ~ high_school_completion_total_population + unemployment_annual_neighborhood.level_total_population + binge_drinking_total_population +  smoking_total_population + frequent_physical_distress_total_population + frequent_mental_distress_total_population + corew_curdeprev + I(frequent_mental_distress_total_population^2) + I(frequent_physical_distress_total_population^2) + I(high_school_completion_total_population^2) + income_inequality_total_population + I(income_inequality_total_population^2) + obesity_total_population  + I(obesity_total_population^2) + high_school_completion_total_population:unemployment_annual_neighborhood.level_total_population + binge_drinking_total_population:smoking_total_population + frequent_physical_distress_total_population:frequent_mental_distress_total_population + paptest_crudeprev + I(uninsured_total_population^2) + racial.ethnic_diversity_total_population  + I(racial.ethnic_diversity_total_population^2) + paptest_crudeprev + diabetes_total_population, data = df_aw)
+final_mod <- lm(mammouse_crudeprev ~ high_school_completion_total_population + unemployment_annual_neighborhood.level_total_population + binge_drinking_total_population +  smoking_total_population + frequent_physical_distress_total_population + frequent_mental_distress_total_population + corew_crudeprev + I(frequent_mental_distress_total_population^2) + I(frequent_physical_distress_total_population^2) + I(high_school_completion_total_population^2) + income_inequality_total_population + I(income_inequality_total_population^2) + obesity_total_population  + I(obesity_total_population^2) + high_school_completion_total_population:unemployment_annual_neighborhood.level_total_population + binge_drinking_total_population:smoking_total_population + frequent_physical_distress_total_population:frequent_mental_distress_total_population + paptest_crudeprev + I(uninsured_total_population^2) + racial.ethnic_diversity_total_population  + I(racial.ethnic_diversity_total_population^2) + paptest_crudeprev + diabetes_total_population, data = df_aw)
 summary(final_mod)
 
 
@@ -541,7 +541,7 @@ This model appears to predict data relatively well, with an adjusted r-squared o
 set.seed(42)
 
 # selecting relevant variables from forward regression
-df_aw_noNA <- df_aw %>% select(mammouse_crudeprev, high_school_completion_total_population, unemployment_annual_neighborhood.level_total_population, binge_drinking_total_population, smoking_total_population, frequent_physical_distress_total_population, frequent_mental_distress_total_population, corew_curdeprev, income_inequality_total_population, obesity_total_population, paptest_crudeprev,racial.ethnic_diversity_total_population, diabetes_total_population)
+df_aw_noNA <- df_aw %>% select(mammouse_crudeprev, high_school_completion_total_population, unemployment_annual_neighborhood.level_total_population, binge_drinking_total_population, smoking_total_population, frequent_physical_distress_total_population, frequent_mental_distress_total_population, corew_crudeprev, income_inequality_total_population, obesity_total_population, paptest_crudeprev,racial.ethnic_diversity_total_population, diabetes_total_population)
 
 # only rows without NA values
 df_aw_train <- df_aw_noNA[complete.cases(df_aw_noNA),]
@@ -556,7 +556,7 @@ test_set <- slice(df_aw_train, -index_train)
 
 # graph to assess relationship
 train_set %>% 
-  gather(predictor, value, c(high_school_completion_total_population, unemployment_annual_neighborhood.level_total_population, binge_drinking_total_population, smoking_total_population, frequent_physical_distress_total_population, frequent_mental_distress_total_population, corew_curdeprev, income_inequality_total_population, obesity_total_population, paptest_crudeprev, racial.ethnic_diversity_total_population, diabetes_total_population)) %>% 
+  gather(predictor, value, c(high_school_completion_total_population, unemployment_annual_neighborhood.level_total_population, binge_drinking_total_population, smoking_total_population, frequent_physical_distress_total_population, frequent_mental_distress_total_population, corew_crudeprev, income_inequality_total_population, obesity_total_population, paptest_crudeprev, racial.ethnic_diversity_total_population, diabetes_total_population)) %>% 
   ggplot(aes(x = value, y = mammouse_crudeprev)) + 
   geom_point() + 
   facet_wrap(~ predictor, scales = 'free_x', 
@@ -567,7 +567,7 @@ train_set %>%
                              "smoking_total_population" = "Smoking Prevalence",
                              "frequent_physical_distress_total_population" = "Physical Distress Prevalence",
                              "frequent_mental_distress_total_population" = "Mental Distress Prevalence",
-                             "corew_curdeprev" = "Health Metric Women > 65 Years",
+                             "corew_crudeprev" = "Health Metric Women > 65 Years",
                              "income_inequality_total_population" = "Income Inequality",
                              "obesity_total_population" = "Obesity Rate",
                              "paptest_crudeprev" = "Pap Tests",
@@ -576,7 +576,7 @@ train_set %>%
   xlab(NULL) + ylab("Mammography Use")
 
 # fitting a model 
-fit <- lm(mammouse_crudeprev ~ high_school_completion_total_population + unemployment_annual_neighborhood.level_total_population + binge_drinking_total_population +  smoking_total_population + frequent_physical_distress_total_population + frequent_mental_distress_total_population + corew_curdeprev +  income_inequality_total_population + obesity_total_population + paptest_crudeprev,racial.ethnic_diversity_total_population + diabetes_total_population, data = train_set, family = "gaussian")
+fit <- lm(mammouse_crudeprev ~ high_school_completion_total_population + unemployment_annual_neighborhood.level_total_population + binge_drinking_total_population +  smoking_total_population + frequent_physical_distress_total_population + frequent_mental_distress_total_population + corew_crudeprev +  income_inequality_total_population + obesity_total_population + paptest_crudeprev,racial.ethnic_diversity_total_population + diabetes_total_population, data = train_set, family = "gaussian")
 
 # fitting a decision tree 
 fit_tree = tree(mammouse_crudeprev ~., data = train_set)
@@ -656,7 +656,7 @@ The Random Forest significantly improves the model, with the variance = 0.993278
 set.seed(46)
 
 # selecting all relevant variables
-df_aw_full <- df_aw %>% select(mammouse_crudeprev, paptest_crudeprev, air_pollution_particulate_matter_total_population, high_school_completion_total_population, unemployment_annual_neighborhood.level_total_population, binge_drinking_total_population, smoking_total_population, frequent_physical_distress_total_population, frequent_mental_distress_total_population, corew_curdeprev, income_inequality_total_population, obesity_total_population, diabetes_total_population, housing_with_potential_lead_risk_total_population, racial.ethnic_diversity_total_population, uninsured_total_population)
+df_aw_full <- df_aw %>% select(mammouse_crudeprev, paptest_crudeprev, air_pollution_particulate_matter_total_population, high_school_completion_total_population, unemployment_annual_neighborhood.level_total_population, binge_drinking_total_population, smoking_total_population, frequent_physical_distress_total_population, frequent_mental_distress_total_population, corew_crudeprev, income_inequality_total_population, obesity_total_population, diabetes_total_population, housing_with_potential_lead_risk_total_population, racial.ethnic_diversity_total_population, uninsured_total_population)
 
 # only rows without NA values
 df_aw_f_train <- df_aw_full[complete.cases(df_aw_full),]
