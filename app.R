@@ -199,8 +199,6 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                                                    "Smoking Rate" = "smoking_total_population",
                                                                    "Unemployment Rate" = "unemployment_annual_neighborhood_level_total_population",
                                                                    "Uninsured Rate" = "uninsured_total_population",
-                                                                   "Prenatal Care" = "prenatal_care_total_population",
-                                                                   "Low Birthweight in Population" = "low_birthweight_total_population",
                                                                    "Binge Drinking" = "binge_drinking_total_population"
                                                        ))
                                  ),

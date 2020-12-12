@@ -26,7 +26,7 @@ library(rpart.plot)
  #data frame of all data
 # df_aw1 <- read.csv("census_tract_total_data.csv")
 # df_aw <- df_aw1 %>% filter(city_name == "New York")
-df_aw1 <- read_csv("./data/census_tract_total_data.csv")
+df_aw1 <- read.csv("./data/census_tract_total_data.csv")
 df_aw <- df_aw1 %>% filter(city_name == "New York")
 ```
 
