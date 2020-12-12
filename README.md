@@ -42,8 +42,8 @@ There are two ways to access the source data used in this project:
   * Data is available in this repository in the ./data directory 
 if git LFS is installed on your machine. (The < git lfs pull > command should allow you to access the files housed in the data folder)
   
-  * Otherwise, the data can also be accessed on Dropbox using this link: https://www.dropbox.com/sh/8qbku2qxk85f31x/AABfbUPHavzU_A4215AxAVqHa?dl=0
-You will need to copy the data folder into the directory for this repository and replace the existing one to
+  * Otherwise, the data can also be accessed on Dropbox using this link: https://www.dropbox.com/sh/8qbku2qxk85f31x/AABfbUPHavzU_A4215AxAVqHa?dl=0.
+You will need to copy the data folder (replacing the existing one) into the directory for this repository to
 run the Shiny app and execute the RMD files. 
 
 Raw data files include:
