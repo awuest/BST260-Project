@@ -1,6 +1,5 @@
 ---
 title: "Regression Analysis 260 Project"
-author: "Anna Wuest"
 date: "November 27, 2020"
 output: html_document
 ---
@@ -848,4 +847,4 @@ tmp %>% ggplot() +
   scale_fill_manual(values=c("purple1", "turquoise1")) +
   guides(fill = guide_legend(title = "Mammography Use %")) +
   theme_igray()
----
+```
