@@ -1,0 +1,849 @@
+---
+title: "Regression Analysis 260 Project"
+author: "Anna Wuest"
+date: "November 27, 2020"
+output: html_document
+---
+
+The following regression analysis is focused on New York City, New York. 
+
+```{r, include=FALSE, warning=FALSE}
+library(dplyr)
+library(ggplot2)
+library(caret)
+library(tree)
+library(tidyr)
+library(randomForest)
+library(mvtnorm)
+library(ggthemes)
+library(knitr)
+library(rpart)
+library(rpart.plot)
+
+
+# setting personal directory
+setwd("C:/Users/annaw/Documents/BST 260/BST260-Project/data")
+# data frame of all data
+df_aw1 <- read.csv("census_tract_total_data.csv")
+df_aw <- df_aw1 %>% filter(city_name == "New York")
+```
+
+Variables:
+
+Target Variables: demographic data (race/ethnicity, age, marital status @ diagnosis (?), % unemployment?, insurance status, median household income, % living less than 150% PVL), facilities, breast cancer mortality, mammography use per geographic location in given year
+
+* Mammouse_crudeprev = Mammography use among women aged 50–74 Years (crude percentage)
+* corew_crudeprev = Older adult women aged >=65 Years who are up to date on a core set of clinical preventive services: Flu shot past Year, PPV shot ever, Colorectal cancer screening, and Mammogram past 2 Years
+paptest_crudeprev = Pap smear tests among adult women aged 21–65 Years within the past 5 years
+* air_pollution_particulate_matter_total_population = average concentration of PM2.5 per cubic meter
+* binge_drinking_total_population = binge drinking prevalence in adults >= 18 years
+* frequent_mental_distress_total_population = poor mental health for >= 14 days over the past 30 days, for those who are >= 18 years
+* frequent_physical_distress_total_population = poor physical health for >= 14 days over the past 30 days, for those who are >= 18 years
+* high_school_completion_total_population = percent of population >= 18 years who graduated from high school 
+* housing_with_potential_lead_risk_total_population = housing with potential lead risk
+* income_inequality_total_population = percent of households at the extreme of the income index (e.g. a high percent would indicate many people with very little money and/or many people with a lot of wealth)
+* obesity_total_population = percent of obese adults
+* racial.ethnic_diversity_total_population = distribution of the population by race/ethinic group
+* smoking_total_population = percent of total population who smoke
+* unemployment_annual_neighborhood.level_total_population = percent of labor force that is unemployed by month
+* uninsured_total_population = percent of population between 0-64 years that lacks health insurance
+* walkability_total_population = access to amenities via walking
+
+
+
+
+# Mammography use (mammouse_crudeprev) as the outcome variable of interest:
+
+## Multiple Linear Regression Justification
+
+The mammography use variable is numeric, continuous, and non-binary. This eliminates logistic as an option because logistic requires a binary outcome variable. Poisson may be used because prevalence is count data, however this data does not include a time offset, nor is the assumption of variance = mean for the ourcome variable satisfied. Finally, ordinal and categorical cannot be applied due to the prevalence measrues. Therefore, I will begin by a multiple linear regression analysis. 
+
+# Model Assumptions:
+* E(Y), the outcome variable, is an unknown linear function of X (predictor variables).
+* All response errors are independent of each others
+* Outcome variables are normally distributed for any covariate. 
+* There is equal variables for each outcome variable, centered at the mean, for any covariate.
+
+## Verifying Assumptions:
+
+### Normally distributed variables
+
+```{r, results = "hide" ,fig.show='hide',  warning=FALSE, message = FALSE}
+par(mfrow=c(4,4))
+ggplot(df_aw, aes(mammouse_crudeprev)) +
+  geom_histogram()
+
+ggplot(df_aw, aes(paptest_crudeprev)) +
+  geom_histogram()
+
+ggplot(df_aw, aes(high_school_completion_total_population)) +
+  geom_histogram()
+
+ggplot(df_aw, aes(unemployment_annual_neighborhood.level_total_population)) +
+  geom_histogram()
+
+ggplot(df_aw, aes(uninsured_total_population)) +
+  geom_histogram()
+
+ggplot(df_aw, aes(housing_with_potential_lead_risk_total_population)) +
+  geom_histogram()
+
+ggplot(df_aw, aes(air_pollution_particulate_matter_total_population)) +
+  geom_histogram()
+
+ggplot(df_aw, aes(binge_drinking_total_population)) +
+  geom_histogram()
+
+ggplot(df_aw, aes(diabetes_total_population)) +
+  geom_histogram()
+
+ggplot(df_aw, aes(frequent_physical_distress_total_population)) +
+  geom_histogram()
+
+ggplot(df_aw, aes(racial.ethnic_diversity_total_population)) +
+  geom_histogram()
+
+ggplot(df_aw, aes(corew_curdeprev)) +
+  geom_histogram()
+
+ggplot(df_aw, aes(frequent_mental_distress_total_population)) +
+  geom_histogram()
+
+ggplot(df_aw, aes(income_inequality_total_population)) +
+  geom_histogram()
+
+ggplot(df_aw, aes(obesity_total_population)) +
+  geom_histogram()
+
+ggplot(df_aw, aes(smoking_total_population)) +
+  geom_histogram()
+```
+* Unusable (not included in code because it didn't run):
+ + limited_access_to_healthy_foods_total_population
+ + walkability_total_population
+* Skewed:
+ + paptest_crudeprev
+  - very skewed
+ + high_school_completion_total_population
+  - seems skewed but this is partially because there is a limit
+ + unemployment_annual_neighborhood.level_total_population
+  - again, may be seem more skewed because of the 0 cut off and outliers.
+* Somewhat normal:
+ + uninsured_total_population
+ + housing_with_potential_lead_risk_total_population
+ + mammouse_crudeprev
+ + air_pollution_particulate_matter_total_population
+ + binge_drinking_total_population
+ + diabetes_total_population
+ + frequent_physical_distress_total_population
+ + racial.ethnic_diversity_total_population
+* Normal:
+ + corew_curdeprev
+ + frequent_mental_distress_total_population
+ + income_inequality_total_population
+ + obesity_total_population
+ + smoking_total_population
+ 
+
+
+### QQ Plot
+```{r, results= 'hide', fig.show='hide', warning = FALSE}
+qqnorm(df_aw$mammouse_crudeprev)
+qqnorm(df_aw$corew_curdeprev) 
+qqnorm(df_aw$paptest_crudeprev) 
+qqnorm(df_aw$air_pollution_particulate_matter_total_population) 
+qqnorm(df_aw$binge_drinking_total_population) 
+qqnorm(df_aw$frequent_mental_distress_total_population) 
+qqnorm(df_aw$frequent_physical_distress_total_population) 
+qqnorm(df_aw$high_school_completion_total_population) 
+qqnorm(df_aw$housing_with_potential_lead_risk_total_population)
+qqnorm(df_aw$income_inequality_total_population) 
+qqnorm(df_aw$obesity_total_population) 
+qqnorm(df_aw$racial.ethnic_diversity_total_population) 
+qqnorm(df_aw$smoking_total_population) 
+qqnorm(df_aw$unemployment_annual_neighborhood.level_total_population)
+qqnorm(df_aw$uninsured_total_population)
+#qqnorm(df_aw$walkability_total_population) 
+```
+* Unusable:
+ + walkability_total_populaton
+* Very skewed variance with notable outliers
+ + frequent_physical_distress_total_population
+ + high_school_completion_total_population
+ + smoking_total_population
+ + unemployment_annual_neighborhood.level_total_population
+ + uninsured_total_population
+* Skewed variance
+ + paptest_crudeprev
+ + binge_drinking_total_population
+ + frequent_mental_distress_total_population
+ + housing_with_potential_lead_risk_total_population
+ + obesity_total_population
+ + racial.ethnic_diversity_total_population
+* Approximately equal variance 
+ + mammouse_crudeprev
+ + corew_crudeprev
+ + air_pollution_particulate_matter_total_population
+ + income_inequality_total_population
+
+### Discussion of Assumptions
+These covariates have a varying levels of skewness in their histograms and QQ-plots. This generally reflects that each variable may not be normally distributed with equal variance. It is also hard to definitively determine if all observations are independent. However, for the purpose of this assignment, I plan on utilizing most of these variables. In this case, we value determining covariates that are best at predicting, and generating an interesting, thought-provoking model. To do so, we will ultimately utilize decision trees and random forests, which are non-parametric and thus their parameters do not need to satisfy the normal assumptions. To determine the best fits, we will use a bag model, as well as parameters selected by a multivariable regression. So, because the multivariable regression is not our primary outcome, we will relax these assumptions. 
+
+## Analysis of singular variables:
+
+```{r, echo=TRUE, results= 'hide', fig.show='hide', warning = FALSE}
+
+# diabetes total population
+onecovar_d <- lm(mammouse_crudeprev ~ diabetes_total_population, data = df_aw)
+summary(onecovar_d)
+
+# diabetes with squared term
+onecovar_d_sq <- lm(mammouse_crudeprev ~ diabetes_total_population + I(paptest_crudeprev^2), data = df_aw)
+summary(onecovar_d_sq)
+
+4# anova
+anova(onecovar_d, onecovar_d_sq)
+
+```
+P-values for both the simple and squared covariate are significant (P < 0.05), but the ANOVA suggests that the model performs better without the squared term. So I will only include the simple term in the full model. 
+
+```{r, fig.show='hide', results= 'hide', warning = FALSE}
+# pap test
+onecovar_pap <- lm(mammouse_crudeprev ~ paptest_crudeprev, data = df_aw)
+summary(onecovar_pap)
+
+# pap test with a squared term
+onecovar_pap_sq <- lm(mammouse_crudeprev ~ paptest_crudeprev + I(paptest_crudeprev^2), data = df_aw)
+summary(onecovar_pap_sq)
+
+# anova
+anova(onecovar_pap, onecovar_pap_sq)
+```
+The multiple R-Squared value is lower for the model with just a simple term (P=0.598) compared to the one with the quadratic (P=0.6571). However, the ANOVA indicates that the model with the quadratic is improved. However, this variable is very skewed and seems like a better use as a an outcome variable. However, I will include the simple term in the forward selection. 
+
+```{r, fig.show='hide', results= 'hide',warning = FALSE}
+# Racial and ethnic diversity 
+onecovar_race <- lm(mammouse_crudeprev ~ racial.ethnic_diversity_total_population, data = df_aw)
+summary(onecovar_race)
+
+# Racial and ethnic diversity with a squared term
+onecovar_race_sq <- lm(mammouse_crudeprev ~ racial.ethnic_diversity_total_population + I(racial.ethnic_diversity_total_population^2), data = df_aw)
+summary(onecovar_race_sq)
+
+# anova
+anova(onecovar_race, onecovar_race_sq)
+```
+
+The above regressions assess the predictive value of race and ethnic diversity, with the latter squaring the covariate. The adjusted R-squared for the first model is 0.04987, where as the model with the squared term has an adjusted R-squared of 0.04965, indicating a slight improvement. Notable, P-values for both terms are significant (P < 0.05), and P-values for both models are significant (P < 0.05). While we may choose to include the squared term in a later model, due to the slight improvement in model function, it is also important to note that it makes the model more difficult to interpret. For now we will include it because of the significant ANOVA P-value. 
+
+
+```{r, fig.show='hide', results= 'hide', warning = FALSE}
+# unemployment rates by neighborhood in percent
+onecovar_unemp <- lm(mammouse_crudeprev ~ unemployment_annual_neighborhood.level_total_population, data=df_aw)
+summary(onecovar_unemp)
+
+# unemployment rates by neighborhood with a squared term in percent
+onecovar_unemp_sq <- lm(mammouse_crudeprev ~ unemployment_annual_neighborhood.level_total_population + I(unemployment_annual_neighborhood.level_total_population^2), data=df_aw)
+summary(onecovar_unemp_sq)
+
+# anova 
+anova(onecovar_unemp, onecovar_unemp_sq)
+```
+
+These models use neighborhood unemployment rates to predict mammography use, where the first model is the simple term and the second model includes the squared term. While both models and both covariates are significant (P < 0.05), the first model has a lower adjusted R-squared value (0.04913), as opposed to the adjusted R-squared in the second model (0.05485).However, since the ANOVA shows that the second model has an improved fit, we will include the squared term. 
+
+```{r, echo=TRUE, results= 'hide', fig.show='hide', warning = FALSE}
+# uninsured by neighborhood in percent
+onecovar_unins <- lm(mammouse_crudeprev ~ uninsured_total_population, data=df_aw)
+summary(onecovar_unins)
+
+# uninsured by neighborhood in percent with a squared term
+onecovar_unins_sq <- lm(mammouse_crudeprev ~ uninsured_total_population + I(uninsured_total_population^2), data=df_aw)
+summary(onecovar_unins_sq)
+
+# anova
+anova(onecovar_unins, onecovar_unins_sq)
+```
+
+These models use uninsurance coverage to predict mammography use, the first includes a simple predictor, and the second includes a squared term. While both models and covariates are significant (P < 0.05), the first model has a higher adjusted R-squared term (0.019) as opposed to the squared term model with an adjusted R-squared values of 0.4098. However, the ANOVA has a P-value < 0.05, which indicates that the second model improves prediction, so I will include the squared term in the final model. 
+
+```{r, echo=TRUE, results= 'hide', fig.show='hide', warning = FALSE}
+# smoking by percent
+onecovar_smk <- lm(mammouse_crudeprev ~ smoking_total_population,data=df_aw)
+summary(onecovar_smk)
+
+
+# smoking by percent
+onecovarsmk_sq <- lm(mammouse_crudeprev ~ smoking_total_population + I(smoking_total_population^2), data=df_aw)
+summary(onecovarsmk_sq)
+
+# anova
+anova(onecovar_smk, onecovarsmk_sq)
+```
+
+These models predict mammography use by smoking prevalence, the first model just uses a simple term, and the second uses a squared term. In this case, the P-values for the covariates and the models are not significant, however the adjusted R-squared values are both low -0.0004195 for the simple covariate and -0.0007106 for the model with a squared term. However, the ANOVA has a P-value > 0.05, so I will not use the squared term in the final model. 
+
+
+```{r, echo=TRUE, results= 'hide',fig.show='hide',  warning = FALSE}
+# obesity percentage 
+onecovar_obs <- lm(mammouse_crudeprev ~ obesity_total_population, data=df_aw)
+summary(onecovar_obs)
+
+# obesity percentage squared
+onecovar_obs_sq <- lm(mammouse_crudeprev ~ obesity_total_population + I(obesity_total_population^2), data=df_aw)
+summary(onecovar_obs_sq)
+
+# anova
+anova(onecovar_obs, onecovar_obs_sq)
+```
+
+These models use obesity to predict mammography use. The first model is simple and the second includes a squared term. Both models are significant (P < 0.05). The adjusted R-squared is lower for the simple model 0.2447, compared to 0.2488 in the model with a squared term. Notable, the simple term is not signficant in the second model, but is in the first. However, the ANOVA test shows that the second model significanly improves prediction, so I will incoporate the squared term into the final model. 
+
+
+```{r, results= 'hide',fig.show='hide',  warning = FALSE}
+# income inequality percentage 
+onecovar_ii <- lm(mammouse_crudeprev ~ income_inequality_total_population, data=df_aw)
+summary(onecovar_ii)
+
+# income inequality squared
+onecovar_ii_sq <- lm(mammouse_crudeprev ~ income_inequality_total_population + I(income_inequality_total_population^2), data=df_aw)
+summary(onecovar_ii_sq)
+
+# anova
+anova(onecovar_ii, onecovar_ii_sq)
+```
+
+These models use income inequality to predict mammography use, with the first using a simple term and the second using simple and quadratic terms. Both are significant with significant covariates (P < 0.05). However, the model with just the simple term has a lower adjusted R-squared of 0.002687 compared to the 0.007365 of the model with the squared term. However, the ANOVA test shows that the second model significanly improves prediction, so I will incoporate the squared term into the final model. 
+ 
+```{r,  results= 'hide', fig.show='hide', warning = FALSE}
+# high school completion percentage 
+onecovar_hs <- lm(mammouse_crudeprev ~ high_school_completion_total_population, data=df_aw)
+summary(onecovar_hs)
+
+# high school completion percentage squared
+onecovar_hs_sq <- lm(mammouse_crudeprev ~ high_school_completion_total_population + I(high_school_completion_total_population^2), data=df_aw)
+summary(onecovar_hs_sq)
+
+anova(onecovar_hs, onecovar_hs_sq)
+```
+
+These models show how high scool graudation rate can predict mammography use. All covariates and both models are significant, and the simple model has a lower adjusted R-squared (0.0334) compared to the squared model (0.03831). However, the ANOVA test shows that the second model significanly improves prediction, so I will incoporate the squared term into the final model. 
+
+```{r, echo=TRUE, results= 'hide', fig.show='hide', warning = FALSE}
+#physical distress percentage 
+onecovar_pd <- lm(mammouse_crudeprev ~ frequent_physical_distress_total_population, data=df_aw)
+summary(onecovar_pd)
+
+# physical distress percentage squared
+onecovar_pd_sq <- lm(mammouse_crudeprev ~ frequent_physical_distress_total_population + I(frequent_physical_distress_total_population^2), data=df_aw)
+summary(onecovar_pd_sq)
+
+# anova 
+anova(onecovar_pd, onecovar_pd_sq)
+```
+
+
+These models show how physical distress may be used to predict mammography use, with the first including a simple term, and the second including a squared term. Both covariates and models are significant (P < 0.05), but the model with just the simple terms has a lower adjusted R-squared (-0.0001511) than the model with the squared term (0.0004815). However, the ANOVA test shows that the second model significanly improves prediction, so I will incoporate the squared term into the final model. 
+
+
+```{r, echo=TRUE, results= 'hide', warning = FALSE}
+# mental distress percentage 
+onecovar_md <- lm(mammouse_crudeprev ~ frequent_physical_distress_total_population, data=df_aw)
+summary(onecovar_md)
+
+# mental distress percentage squared
+onecovar_md_sq <- lm(mammouse_crudeprev ~ frequent_mental_distress_total_population + I(frequent_mental_distress_total_population^2), data=df_aw)
+summary(onecovar_md_sq)
+
+# anova 
+anova(onecovar_md, onecovar_md_sq)
+```
+
+These models show how mental distress may be used to predict mammography use, with the first including a simple term, and the second including a squared term. Both models are significant (P < 0.05), but neither term is significant in the squared model. The model with just the simple terms has a lower adjusted R-squared (-0.0001511) than the model with the squared term (0.005924). However, the ANOVA test shows that the second model significanly improves prediction, so I will incoporate the squared term into the final model. 
+
+
+```{r, echo=TRUE, results= 'hide', warning = FALSE}
+
+# overall health 
+onecovar_oh <- lm(mammouse_crudeprev ~ corew_curdeprev, data=df_aw)
+summary(onecovar_oh)
+
+# overall health squared
+onecovar_oh_sq <- lm(mammouse_crudeprev ~ corew_curdeprev + I(corew_curdeprev^2), data=df_aw)
+summary(onecovar_oh_sq)
+
+# anova
+anova(onecovar_oh, onecovar_oh_sq)
+```
+
+These models shows how wellness considerations (i.e. getting vaccinations, getting pap smears) may predict mammography use. The adjusted R-squared value is greater for the model with just the simple term, and the ANOVA has a P-value > 0.05, so the squared term does not appear to improve the model. 
+
+
+
+```{r, echo=TRUE, results= 'hide', fig.show='hide', warning = FALSE}
+# lead exposure 
+onecovar_lead <- lm(mammouse_crudeprev ~ housing_with_potential_lead_risk_total_population, data=df_aw)
+summary(onecovar_lead)
+
+# binge drinking
+onecovar_binge <- lm(mammouse_crudeprev ~ binge_drinking_total_population, data=df_aw)
+summary(onecovar_binge)
+
+# air pollution
+onecovar_pol <- lm(mammouse_crudeprev ~ air_pollution_particulate_matter_total_population, data=df_aw)
+summary(onecovar_pol)
+
+# walkability - ALL NA'S
+# onecovar_wlk <- lm(mammouse_crudeprev ~ walkability_total_population, data=df_aw)
+# summary(onecovar_wlk)
+```
+
+The effect of lead expsosure on breast cancer appears to be significant, however, it is important to note that lead exposure may also be correlated with demographic variables i.e. income, location, which also have influence on mammography use. We may test for effect modification and confounding later in the regression analysis.
+
+The affect of binge drinking seems to be significant. The adjusted R-squared is 0.0009192. 
+
+The affect of air pollution seems to be significant. The adjusted R-squared is 1.229e-06. 
+
+# Analysis of effect modification and confounding
+
+## Analysis of effect modification
+
+Effect modification:
+* mental x physical distress
+* binge drinking x smoking
+* highschool graduation x unemployment
+
+### mental distress x physical distress
+```{r, echo=TRUE, results= 'hide', warning = FALSE}
+# mental distress x physical distress
+dist_aw <- lm(mammouse_crudeprev ~ frequent_physical_distress_total_population + frequent_mental_distress_total_population, data=df_aw)
+summary(dist_aw)
+
+# model with interaction term
+em_dist_aw <- lm(mammouse_crudeprev ~ frequent_physical_distress_total_population + frequent_mental_distress_total_population + frequent_physical_distress_total_population*frequent_mental_distress_total_population, data=df_aw)
+summary(em_dist_aw)
+
+# anova test
+anova(dist_aw, em_dist_aw)
+```
+The above code test for interaction between frequent mental and physical distress. Intuitively, there may be interaction between these two variables because physical distress may beget mental distress, and vice versa. For example, it may be  the case that as physical distress increases, mental distress increases, too. 
+
+While the adjusted R-squared values are the same, the ANOVA test suggest that the model with the interaction term improves the model with P = 0.1982 < 0.05. Thus, there appears to be effect modification between physical and mental stress. 
+
+### binge drinking x smoking
+```{r, echo=TRUE, results= 'hide', warning=FALSE}
+# binge drinking x smoking
+binsmk_aw <- lm(mammouse_crudeprev ~ binge_drinking_total_population + smoking_total_population, data=df_aw)
+summary(binsmk_aw)
+
+# model with interaction term
+em_binsmk_aw <- lm(mammouse_crudeprev ~ binge_drinking_total_population + smoking_total_population + binge_drinking_total_population*smoking_total_population, data=df_aw)
+summary(em_binsmk_aw)
+
+# anova test
+anova(binsmk_aw, em_binsmk_aw)
+```
+The above code tests for interaction between smoking and drinking. These two variables often correspond with each other, where people who smoke are more likely to drink, and vice versa. 
+
+The adjusted R-squared for the first model is 0.0007185, and 0.003019 for the second, suggested that the first model is better. However, the ANOVA has p-value = 0.01543 < 0.05. This suggest that the model with effect modification is better. 
+
+### highschool graduation x unemployment
+```{r, echo=TRUE, results= 'hide', warning=FALSE}
+# highschool graduation x unemployment
+grademp_aw <- lm(mammouse_crudeprev ~ high_school_completion_total_population + unemployment_annual_neighborhood.level_total_population, data=df_aw)
+summary(grademp_aw)
+
+# model with interaction term
+em_grademp_aw <- lm(mammouse_crudeprev ~ high_school_completion_total_population + unemployment_annual_neighborhood.level_total_population + high_school_completion_total_population*unemployment_annual_neighborhood.level_total_population, data=df_aw)
+summary(em_grademp_aw)
+
+# anova test
+anova(grademp_aw, em_grademp_aw)
+
+```
+The above code tests for interaction between high school graduation rate and unemployment. High school graduation is a common requirement for jobs, and so we might expect that as high school gradution increases, unemployment decreases, and vice versa. 
+
+The adjusted R-squared for the first model is 0.1442, and 0.1445 for the second, suggested that the first model is better. However, the ANOVA has p-value = 0.664 < 0.05. This suggest that the model with effect modification is better. 
+
+## Analysis of confounding
+
+Confounding: 
+* unemployment x uninsured
+* highschool graduation x unemployment
+
+### unemployment x uninsured
+```{r, echo=TRUE, results= 'hide', warning=FALSE}
+# Does employment confound insurance coverage?
+ins_aw <- lm(mammouse_crudeprev ~ uninsured_total_population, data=df_aw)
+summary(ins_aw)
+
+insemp_aw <- lm(mammouse_crudeprev ~ uninsured_total_population + unemployment_annual_neighborhood.level_total_population, data=df_aw)
+summary(insemp_aw)
+
+# crude - adjusted / adjused coefficients for insurance coverage
+coeff_diff <- 100*(((coef(ins_aw)[2]-coef(insemp_aw)[2])/coef(insemp_aw)[2]))
+print(coeff_diff)
+```
+There may be confounding between insurance coverage and unemployment. For example, the effect of unemployment on mammography use may be significant, but the real association may be between unsinsurance and unemployment. In this case, the unemployment causes a lack of insurance, which then affects people's ability to get a mammography. 
+
+There is a 13.5% percent difference between the coefficient for insurance coverage between the crude and adjusted models. This is relatively high, which indicates that there is some confounding. 
+
+### highschool graduation x unemployment
+```{r, echo=TRUE, results= 'hide'}
+# Does highschool graduation confound unemployment?
+emp_aw <- lm(mammouse_crudeprev ~ unemployment_annual_neighborhood.level_total_population, data=df_aw)
+summary(emp_aw)
+
+emp_hs_aw <- lm(mammouse_crudeprev ~ high_school_completion_total_population + unemployment_annual_neighborhood.level_total_population, data=df_aw)
+summary(emp_hs_aw)
+
+# crude - adjusted / adjused coefficients for insurance coverage
+coeff_diff2 <- 100*(((coef(emp_aw)[2]-coef(emp_hs_aw)[2])/coef(emp_hs_aw)[2]))
+print(coeff_diff2)
+```
+There may be confounding between high school graduation and unemployment. Where high school graduation may be seem to have an association with mammography use, however, this association is due to the back door pathway of employment, which enables access to healthcare. 
+
+There is a 75.05% percent difference between the coefficient for insurance coverage between the crude and adjusted models. This is relatively high, which indicates that there is some confounding.
+
+
+# Selection 
+
+## Forward selection
+
+```{r, echo=TRUE, results= 'hide', warning = FALSE}
+# forward model selection
+
+full_mod <-lm(mammouse_crudeprev ~ high_school_completion_total_population + unemployment_annual_neighborhood.level_total_population + high_school_completion_total_population*unemployment_annual_neighborhood.level_total_population + binge_drinking_total_population + smoking_total_population + binge_drinking_total_population*smoking_total_population + frequent_physical_distress_total_population + frequent_mental_distress_total_population + frequent_physical_distress_total_population*frequent_mental_distress_total_population + corew_curdeprev + I(frequent_mental_distress_total_population^2) + I(frequent_physical_distress_total_population^2) + I(high_school_completion_total_population^2) + income_inequality_total_population + I(income_inequality_total_population^2) + obesity_total_population + I(obesity_total_population^2) + smoking_total_population + I(uninsured_total_population^2) + I(unemployment_annual_neighborhood.level_total_population^2) + racial.ethnic_diversity_total_population + I(racial.ethnic_diversity_total_population^2) +  paptest_crudeprev + diabetes_total_population, family = gaussian(), data=df_aw)
+
+mod_forw <- step(full_mod, direction = "forward")
+summary(mod_forw)
+
+```
+
+
+Resulting model:
+
+```{r}
+final_mod <- lm(mammouse_crudeprev ~ high_school_completion_total_population + unemployment_annual_neighborhood.level_total_population + binge_drinking_total_population +  smoking_total_population + frequent_physical_distress_total_population + frequent_mental_distress_total_population + corew_curdeprev + I(frequent_mental_distress_total_population^2) + I(frequent_physical_distress_total_population^2) + I(high_school_completion_total_population^2) + income_inequality_total_population + I(income_inequality_total_population^2) + obesity_total_population  + I(obesity_total_population^2) + high_school_completion_total_population:unemployment_annual_neighborhood.level_total_population + binge_drinking_total_population:smoking_total_population + frequent_physical_distress_total_population:frequent_mental_distress_total_population + paptest_crudeprev + I(uninsured_total_population^2) + racial.ethnic_diversity_total_population  + I(racial.ethnic_diversity_total_population^2) + paptest_crudeprev + diabetes_total_population, data = df_aw)
+summary(final_mod)
+
+
+```
+This model appears to predict data relatively well, with an adjusted r-squared of 0.886. However, it is complicated, and thus very hard to interpret. Fortunately, we will use this model to inform decision trees and random forests. 
+
+# Machine Learning
+
+## Decision tree based on variables from foward selection
+```{r, warning = FALSE}
+
+set.seed(42)
+
+# selecting relevant variables from forward regression
+df_aw_noNA <- df_aw %>% select(mammouse_crudeprev, high_school_completion_total_population, unemployment_annual_neighborhood.level_total_population, binge_drinking_total_population, smoking_total_population, frequent_physical_distress_total_population, frequent_mental_distress_total_population, corew_curdeprev, income_inequality_total_population, obesity_total_population, paptest_crudeprev,racial.ethnic_diversity_total_population, diabetes_total_population)
+
+# only rows without NA values
+df_aw_train <- df_aw_noNA[complete.cases(df_aw_noNA),]
+
+
+# split into training and testing data
+index_train <- createDataPartition(y = df_aw_train$mammouse_crudeprev, times = 1, p= 0.5, list=FALSE)
+
+
+train_set <- slice(df_aw_train, index_train)
+test_set <- slice(df_aw_train, -index_train)
+
+# graph to assess relationship
+train_set %>% 
+  gather(predictor, value, c(high_school_completion_total_population, unemployment_annual_neighborhood.level_total_population, binge_drinking_total_population, smoking_total_population, frequent_physical_distress_total_population, frequent_mental_distress_total_population, corew_curdeprev, income_inequality_total_population, obesity_total_population, paptest_crudeprev, racial.ethnic_diversity_total_population, diabetes_total_population)) %>% 
+  ggplot(aes(x = value, y = mammouse_crudeprev)) + 
+  geom_point() + 
+  facet_wrap(~ predictor, scales = 'free_x', 
+             labeller = 
+               as_labeller(c("high_school_completion_total_population"="Graduation Rate", 
+                             "unemployment_annual_neighborhood.level_total_population" = "Unemployment Rate", 
+                             "binge_drinking_total_population" = "Binge Drinking Prevalence", 
+                             "smoking_total_population" = "Smoking Prevalence",
+                             "frequent_physical_distress_total_population" = "Physical Distress Prevalence",
+                             "frequent_mental_distress_total_population" = "Mental Distress Prevalence",
+                             "corew_curdeprev" = "Health Metric Women > 65 Years",
+                             "income_inequality_total_population" = "Income Inequality",
+                             "obesity_total_population" = "Obesity Rate",
+                             "paptest_crudeprev" = "Pap Tests",
+                             "racial.ethnic_diversity_total_population" = "Racial and Ethnic Diversity",
+                             "diabetes_total_population" = "Diabetes prevalence in population"))) + 
+  xlab(NULL) + ylab("Mammography Use")
+
+# fitting a model 
+fit <- lm(mammouse_crudeprev ~ high_school_completion_total_population + unemployment_annual_neighborhood.level_total_population + binge_drinking_total_population +  smoking_total_population + frequent_physical_distress_total_population + frequent_mental_distress_total_population + corew_curdeprev +  income_inequality_total_population + obesity_total_population + paptest_crudeprev,racial.ethnic_diversity_total_population + diabetes_total_population, data = train_set, family = "gaussian")
+
+# fitting a decision tree 
+fit_tree = tree(mammouse_crudeprev ~., data = train_set)
+
+# plot decision tree - this code chunk fails sometimes?
+plot(fit_tree)
+text(fit_tree, pretty = 0)
+
+# make the tree look nice
+fit_tree_nice <- rpart(mammouse_crudeprev ~., data = train_set)
+rpart.plot(fit_tree_nice, box.palette = "BuGn")
+
+# MSE
+preds_ft = predict(fit_tree, newdata = test_set)
+summary(preds_ft)
+mean((preds_ft - test_set$mammouse_crudeprev)^2)
+# MSE = 2.365393
+
+# this fits well because the minimum deviance is at 11
+cv_tree <- cv.tree(fit_tree)
+plot(cv_tree$size, cv_tree$dev, type='b', xlab = "Number of terminal nodes", ylab = "deviance")
+
+# if we prune with best 8: 
+# trying 8 because it appears to have a relatively low deviance but with the fewest number of covariates. 
+fit_regtree_prune = prune.tree(fit_tree, best = 8)
+
+# plot pruned tree
+plot(fit_regtree_prune)
+text(fit_regtree_prune, pretty = 0)
+
+summary(fit_regtree_prune)
+
+# MSE Pruned Tree
+preds_lm = predict(fit_regtree_prune, newdata = test_set)
+summary(preds_lm)
+mean((preds_lm - test_set$mammouse_crudeprev)^2)
+# MSE = 2.417086
+
+# this MSE with fewer brances is still not as good as the model with 10 nodes
+
+sapply(list("Linear regression" = fit, 
+            "Regression tree" = fit_tree, 
+            "Pruned regression tree" = fit_regtree_prune), 
+       function(mod) {
+         pred = predict(mod, newdata = test_set)
+         mean((pred - test_set$mammouse_crudeprev)^2)
+})
+
+
+```
+
+## Random Forest Based on covariates from the full model
+```{r}
+
+# Random Forest with full Model from forward selection
+# construct random forest regression
+fit_rf_aw <- randomForest(mammouse_crudeprev~., data = train_set)
+# summary
+fit_rf_aw
+
+# performance
+preds_rf = predict(fit_rf_aw, newdata = test_set)
+plot(preds_rf, test_set$mammouse_crudeprev)
+abline(0,1)
+
+# MSE - MUCH better
+mean((preds_rf - test_set$mammouse_crudeprev)^2, na.rm = TRUE)
+
+```
+
+The Random Forest significantly improves the model, with the variance = 0.9932781, a decrease from the next lowest (linear regression) at 1.965230. However, in both cases the favored numer of nodes was equal to the max number of nodes. So, I will next try a bag model on a random forest. 
+
+## Bag Model - decision tree and  random forest
+
+```{r}
+
+set.seed(46)
+
+# selecting all relevant variables
+df_aw_full <- df_aw %>% select(mammouse_crudeprev, paptest_crudeprev, air_pollution_particulate_matter_total_population, high_school_completion_total_population, unemployment_annual_neighborhood.level_total_population, binge_drinking_total_population, smoking_total_population, frequent_physical_distress_total_population, frequent_mental_distress_total_population, corew_curdeprev, income_inequality_total_population, obesity_total_population, diabetes_total_population, housing_with_potential_lead_risk_total_population, racial.ethnic_diversity_total_population, uninsured_total_population)
+
+# only rows without NA values
+df_aw_f_train <- df_aw_full[complete.cases(df_aw_full),]
+
+# split into training and testing data
+index_train_f <- createDataPartition(y = df_aw_f_train$mammouse_crudeprev, times = 1, p= 0.5, list=FALSE)
+
+train_set_f <- slice(df_aw_f_train, index_train)
+test_set_f <- slice(df_aw_f_train, -index_train)
+
+# decision tree bag model 
+fit_tree_bag <- tree(mammouse_crudeprev~., data=train_set_f)
+plot(fit_tree_bag)
+text(fit_tree_bag, pretty = 0)
+#prediction
+preds_tree_bag <- predict(fit_tree_bag, newdata = test_set_f)
+
+# make the tree look nice
+fit_tree_bag_nice <- rpart(mammouse_crudeprev ~., data = train_set)
+rpart.plot(fit_tree_bag_nice, box.palette = "BuGn")
+
+
+# Random Forest Bag Model
+# construct random forest regression
+fit_rf_bag <- randomForest(mammouse_crudeprev~., data = train_set_f)
+# summary
+fit_rf_bag
+# predict 
+preds_rf_bag = predict(fit_rf_bag, newdata = test_set_f, type = "class")
+
+# performance
+plot(preds_rf_bag, test_set_f$mammouse_crudeprev)
+abline(0,1)
+
+test_set$mammouse_crudeprev <- as.factor(test_set$mammouse_crudeprev)
+
+# MSE - MUCH better
+mean((preds_rf_bag - test_set_f$mammouse_crudeprev)^2, na.rm = TRUE)
+
+df_pred <- data.frame("prediction" = preds_rf_bag, "actual" = test_set_f$mammouse_crudeprev, "accuracy" = test_set_f$mammouse_crudeprev - preds_rf_bag, "diversity" = test_set_f$racial.ethnic_diversity_total_population)
+
+# let's check most important variables 
+variable_importance <- importance(fit_rf_bag) 
+tmp <- tibble(feature = rownames(variable_importance),
+                  Importance = variable_importance[,1]) %>%
+                  arrange(desc(Importance))
+print(tmp)
+
+ggplot(df_pred, aes(diversity, accuracy)) + 
+  geom_point()
+
+ggplot(df_pred, aes(prediction, diversity)) + 
+  geom_point()
+
+```
+
+
+## Racial Diversity Classification
+
+```{r, warning = FALSE}
+median(df_aw_train$mammouse_crudeprev)
+
+# Categorizing diversity as high or low
+df_aw_train <- df_aw_train %>% mutate(mam_use = ifelse(mammouse_crudeprev < 79.6, "low", "high"))
+
+set.seed(42)
+
+# sampling part of the data
+dat <- sample_n(df_aw_train, 1500) %>% select(racial.ethnic_diversity_total_population, mam_use, paptest_crudeprev, obesity_total_population) %>% mutate(mam_use = as.factor(mam_use))
+
+# training and testing sets
+inTrain   <- createDataPartition(y = dat$mam_use, p = 0.5)
+train_set <- slice(dat, inTrain$Resample1)
+test_set  <- slice(dat, -inTrain$Resample1)
+
+# random forest:
+fit_rf_bin <- randomForest(mam_use~., data = train_set)
+# predict 
+preds_rf_bin = predict(fit_rf_bin, newdata = test_set, type="class")
+
+# confusion matrix - maybe outcome we can divide into categories?
+confusionMatrix(factor(preds_rf_bin), factor(test_set$mam_use))
+# about 82% accuracy
+
+# getting mean, sd and r
+params <- train_set %>% group_by(mam_use) %>% 
+  summarize(avg_1 = mean(paptest_crudeprev), avg_2 = mean(racial.ethnic_diversity_total_population), sd_1= sd(paptest_crudeprev), sd_2 = sd(racial.ethnic_diversity_total_population), r = cor(paptest_crudeprev,racial.ethnic_diversity_total_population))
+
+# function from code
+params <-params %>% mutate(sd_1 = mean(sd_1), sd_2=mean(sd_2), r=mean(r))
+params 
+
+
+get_p <- function(params, data){
+  dmvnorm( cbind(data$paptest_crudeprev, data$racial.ethnic_diversity_total_population), 
+               mean = c(params$avg_1, params$avg_2), 
+               sigma = matrix( c(params$sd_1^2,
+                                 params$sd_1*params$sd_2*params$r,
+                                 params$sd_1*params$sd_2*params$r,
+                                 params$sd_2^2),2,2))
+}
+
+# applying function onto our parameters
+p0 <- get_p(params[1,], test_set)  
+p1 <- get_p(params[2,], test_set)  
+
+# graph pap test vs diversity
+pred <- apply(cbind(p0, p1),1,which.max)
+tmp <- test_set %>% mutate(pred=pred)
+
+tmp %>% ggplot() +
+        stat_contour(aes(x=paptest_crudeprev,y=racial.ethnic_diversity_total_population,z=pred),
+        breaks=c(1,2),color="black",lwd=1.5) +
+        geom_point(aes(paptest_crudeprev,racial.ethnic_diversity_total_population, fill=mam_use), dat=test_set,pch=21) + 
+  ylab("Diversity of Neighborhood %") +
+  xlab("Pap Test Prevalence %") +
+  ggtitle("Correlation of Diversity and Pap Test to Mammography Use") +
+  stat_ellipse(aes(paptest_crudeprev,racial.ethnic_diversity_total_population, fill=mam_use)) +
+  scale_fill_manual(values=c("purple1", "turquoise1")) +
+  guides(fill = guide_legend(title = "Mammography Use %")) +
+  theme_igray()
+```
+
+```{r, warning = FALSE}
+
+set.seed(42)
+
+# training and testing sets
+inTrain_ob   <- createDataPartition(y = dat$mam_use, p = 0.5)
+train_set_ob <- slice(dat, inTrain_ob$Resample1)
+test_set_ob  <- slice(dat, -inTrain_ob$Resample1)
+
+# random forest:
+fit_rf_bin_ob <- randomForest(mam_use~., data = train_set_ob)
+# predict 
+preds_rf_bin_ob = predict(fit_rf_bin_ob, newdata = test_set_ob, type="class")
+
+# confusion matrix - maybe outcome we can divide into categories?
+confusionMatrix(factor(preds_rf_bin_ob), factor(test_set$mam_use))
+# about 82% accuracy
+
+# graph 
+pred <- apply(cbind(p0, p1),1,which.max)
+tmp <- test_set %>% mutate(pred=pred)
+
+tmp %>% ggplot() +
+        stat_contour(aes(x=obesity_total_population,y=racial.ethnic_diversity_total_population,z=pred),
+        breaks=c(1,2),color="black",lwd=1.5) +
+        geom_point(aes(obesity_total_population,racial.ethnic_diversity_total_population, fill=mam_use), dat=test_set,pch=21) + 
+  ylab("Diversity of Neighborhood %") +
+  xlab("Obesity Rate %") +
+  ggtitle("Correlation of Diversity and Obesity Rate to Mammography Use") +
+  stat_ellipse(aes(obesity_total_population,racial.ethnic_diversity_total_population, fill=mam_use)) +
+  scale_fill_manual(values=c("purple1", "turquoise1")) +
+  guides(fill = guide_legend(title = "Mammography Use %")) +
+  theme_igray()
+```
+
+```{r, warning = FALSE}
+# pap tests and diversity
+set.seed(42)
+
+# training and testing sets
+inTrain_op   <- createDataPartition(y = dat$mam_use, p = 0.5)
+train_set_op <- slice(dat, inTrain_op$Resample1)
+test_set_op  <- slice(dat, -inTrain_op$Resample1)
+
+# random forest:
+fit_rf_bin_op <- randomForest(mam_use~., data = train_set_op)
+# predict 
+preds_rf_bin_op = predict(fit_rf_bin_ob, newdata = test_set_op, type="class")
+
+# confusion matrix - maybe outcome we can divide into categories?
+confusionMatrix(factor(preds_rf_bin_op), factor(test_set$mam_use))
+# about 82% accuracy
+
+# graph 
+pred <- apply(cbind(p0, p1),1,which.max)
+tmp <- test_set %>% mutate(pred=pred)
+
+tmp %>% ggplot() +
+        stat_contour(aes(x=obesity_total_population,y=paptest_crudeprev,z=pred),
+        breaks=c(1,2),color="black",lwd=1.5) +
+        geom_point(aes(obesity_total_population,paptest_crudeprev, fill=mam_use), dat=test_set,pch=21) + 
+  ylab("Pap Tests %") +
+  xlab("Obesity Rate %") +
+  ggtitle("Correlation of Pap Tests and Obesity Rate to Mammography Use") +
+  stat_ellipse(aes(obesity_total_population,paptest_crudeprev, fill=mam_use)) +
+  scale_fill_manual(values=c("purple1", "turquoise1")) +
+  guides(fill = guide_legend(title = "Mammography Use %")) +
+  theme_igray()
+```
