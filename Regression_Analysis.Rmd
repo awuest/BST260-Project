@@ -22,10 +22,11 @@ library(rpart.plot)
 
 
 # setting personal directory
-setwd("C:/Users/annaw/Documents/BST 260/BST260-Project/data")
+# setwd("C:/Users/annaw/Documents/BST 260/BST260-Project/data")
 # data frame of all data
-df_aw1 <- read.csv("census_tract_total_data.csv")
-df_aw <- df_aw1 %>% filter(city_name == "New York")
+# df_aw1 <- read.csv("census_tract_total_data.csv")
+# df_aw <- df_aw1 %>% filter(city_name == "New York")
+census_tract_total_data <- read_csv("./data/census_tract_total_data.csv")
 ```
 
 Variables:
